@@ -1,0 +1,23 @@
+<div class="ticket" [class]="claseBordePrioridad()">
+  <div class="ticket-row" (click)="toggle.emit()">
+    <span class="t-id">{{ ticket().codigoTicket }}</span>
+    <span class="t-title">{{ ticket().titulo }}</span>
+    <span class="badge cat">{{ categoriaCodigo[ticket().categoria] }}</span>
+    <span class="badge" [class]="claseBadgePrioridad()">
+      {{ labelDe(prioridades, ticket().prioridad) }}
+    </span>
+    <span class="badge estado">{{ ticket().estado }}</span>
+    <span class="t-date">{{ ticket().creado | date: 'dd MMM' }}</span>
+  </div>
+
+  @if (expandido()) {
+    <div class="ticket-detail open" (click)="$event.stopPropagation()">
+      <app-ticket-detail
+        [ticket]="ticket()"
+        (estadoChange)="estadoChange.emit($event)"
+        (prioridadChange)="prioridadChange.emit($event)"
+        (eliminar)="eliminar.emit()"
+      />
+    </div>
+  }
+</div>

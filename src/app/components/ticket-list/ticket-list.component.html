@@ -1,0 +1,45 @@
+<div class="app">
+  <div class="header">
+    <div>
+      <h1>&gt; Centro de Tickets — Sistemas</h1>
+      <p class="sub">
+        <span class="count">{{ ticketsService.tickets().length }}</span> tickets registrados
+      </p>
+    </div>
+    <button class="btn-new" (click)="modalAbierto.set(true)">+ Nuevo ticket</button>
+  </div>
+
+  <app-ticket-filter-bar
+    [(busqueda)]="busqueda"
+    [(categoria)]="categoria"
+    [(prioridad)]="prioridad"
+    [(estado)]="estado"
+  />
+
+  @if (ticketsService.loading()) {
+    <div class="loading">Cargando tickets...</div>
+  } @else if (ticketsService.error()) {
+    <div class="err-banner">{{ ticketsService.error() }}</div>
+  } @else if (ticketsService.tickets().length === 0) {
+    <div class="empty">Todavía no hay tickets. Crea el primero con "+ Nuevo ticket".</div>
+  } @else if (ticketsFiltrados().length === 0) {
+    <div class="empty">Ningún ticket coincide con estos filtros.</div>
+  } @else {
+    <div class="list">
+      @for (t of ticketsFiltrados(); track t.id) {
+        <app-ticket-row
+          [ticket]="t"
+          [expandido]="idExpandido() === t.id"
+          (toggle)="toggleExpandido(t.id)"
+          (estadoChange)="onEstadoChange(t.id, $event)"
+          (prioridadChange)="onPrioridadChange(t.id, $event)"
+          (eliminar)="onEliminar(t.id)"
+        />
+      }
+    </div>
+  }
+</div>
+
+@if (modalAbierto()) {
+  <app-new-ticket-modal (cerrar)="cerrarModal()" />
+}

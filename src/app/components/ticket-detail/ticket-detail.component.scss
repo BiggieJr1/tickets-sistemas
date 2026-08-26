@@ -1,0 +1,52 @@
+:host {
+  display: block;
+}
+
+p {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 14px 0;
+  white-space: pre-wrap;
+}
+.detail-meta {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.detail-meta span b {
+  color: var(--text);
+  font-weight: 500;
+}
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.detail-actions select {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.btn-del {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--crit);
+  color: var(--crit);
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+.btn-del:hover {
+  background: var(--crit-dim);
+}

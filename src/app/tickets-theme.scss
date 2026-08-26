@@ -1,0 +1,22 @@
+// Importar UNA vez en src/styles.scss: @use 'app/tickets/tickets-theme';
+// Las variables son CSS custom properties, así que atraviesan el
+// encapsulamiento de vistas de cada componente sin problema.
+
+:root {
+  --bg: #10141a;
+  --panel: #171e27;
+  --panel-2: #1e2731;
+  --border: #2a3441;
+  --text: #e7ebf0;
+  --muted: #8996a8;
+  --accent: #2dd4bf;
+  --accent-dim: rgba(45, 212, 191, 0.14);
+  --crit: #f5484d;
+  --crit-dim: rgba(245, 72, 77, 0.14);
+  --alta: #f5a524;
+  --alta-dim: rgba(245, 165, 36, 0.14);
+  --media: #3b82f6;
+  --media-dim: rgba(59, 130, 246, 0.14);
+  --baja: #64748b;
+  --baja-dim: rgba(100, 116, 139, 0.16);
+}

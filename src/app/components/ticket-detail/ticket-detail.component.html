@@ -1,0 +1,29 @@
+<div class="detail-meta">
+  <span>Categoría: <b>{{ labelDe(categorias, ticket().categoria) }}</b></span>
+  <span>Solicitante: <b>{{ ticket().solicitante ?? '—' }}</b></span>
+  <span>Creado: <b>{{ ticket().creado | date: 'medium' }}</b></span>
+</div>
+
+<p>{{ ticket().descripcion }}</p>
+
+<div class="detail-actions">
+  <select
+    [ngModel]="ticket().estado"
+    (ngModelChange)="estadoChange.emit($event)"
+  >
+    @for (e of estados; track e.value) {
+      <option [value]="e.value">{{ e.label }}</option>
+    }
+  </select>
+
+  <select
+    [ngModel]="ticket().prioridad"
+    (ngModelChange)="prioridadChange.emit($event)"
+  >
+    @for (p of prioridades; track p.value) {
+      <option [value]="p.value">{{ p.label }}</option>
+    }
+  </select>
+
+  <button class="btn-del" (click)="confirmarEliminar()">Eliminar</button>
+</div>

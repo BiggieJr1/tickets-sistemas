@@ -1,0 +1,28 @@
+<div class="filters">
+  <input
+    type="text"
+    placeholder="Buscar por título..."
+    [(ngModel)]="busqueda"
+  />
+
+  <select [(ngModel)]="categoria">
+    <option value="">Categoría: todas</option>
+    @for (c of categorias; track c.value) {
+      <option [value]="c.value">{{ c.label }}</option>
+    }
+  </select>
+
+  <select [(ngModel)]="prioridad">
+    <option value="">Prioridad: todas</option>
+    @for (p of prioridades; track p.value) {
+      <option [value]="p.value">{{ p.label }}</option>
+    }
+  </select>
+
+  <select [(ngModel)]="estado">
+    <option value="">Estado: todos</option>
+    @for (e of estados; track e.value) {
+      <option [value]="e.value">{{ e.label }}</option>
+    }
+  </select>
+</div>

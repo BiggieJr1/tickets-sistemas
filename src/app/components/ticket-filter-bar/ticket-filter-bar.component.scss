@@ -1,0 +1,25 @@
+.filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.filters select,
+.filters input[type='text'] {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  outline: none;
+}
+.filters select:focus,
+.filters input:focus {
+  border-color: var(--accent);
+}
+.filters input[type='text'] {
+  flex: 1;
+  min-width: 160px;
+}
