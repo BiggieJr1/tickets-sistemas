@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   CATEGORIAS,
@@ -13,7 +14,7 @@ import {
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   templateUrl: './ticket-detail.component.html',
   styleUrl: './ticket-detail.component.scss',
 })
