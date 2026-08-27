@@ -20,3 +20,8 @@
   --baja: #64748b;
   --baja-dim: rgba(100, 116, 139, 0.16);
 }
+body {
+  margin: 0;
+  background: var(--bg);
+  min-height: 100vh;
+}
