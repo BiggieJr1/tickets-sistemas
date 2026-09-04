@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, isDevMode, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   EstadoValue,
@@ -8,9 +8,12 @@ import {
   TicketCreateDto,
 } from '../models/ticket.model';
 
-// Ajusta esto si la API no queda detrás de un proxy /api en el mismo dominio
-// (en dev, configúralo en proxy.conf.json de Angular CLI).
-const API_BASE = '/api/tickets';
+// En desarrollo (`ng serve`) se usa la ruta relativa `/api/tickets`, que
+// proxy.conf.json redirige a http://localhost:5080 (tu API corriendo local).
+// En producción (build para Netlify) apunta directo a la API pública en Railway.
+const API_BASE = isDevMode()
+  ? '/api/tickets'
+  : 'https://tickets-sistemas-backend-production.up.railway.app/api/tickets';
 
 // Extrae un mensaje legible de un error HTTP: prioriza lo que mande el
 // backend (string plano o { message }) antes que el texto genérico que
