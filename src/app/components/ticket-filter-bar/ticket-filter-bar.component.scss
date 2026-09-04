@@ -23,3 +23,18 @@
   flex: 1;
   min-width: 160px;
 }
+.btn-clear {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.btn-clear:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}

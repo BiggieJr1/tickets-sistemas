@@ -1,11 +1,13 @@
 <div class="overlay open" (click)="cerrar.emit()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h2>&gt; Nuevo ticket</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" (click)="$event.stopPropagation()">
+    <h2 id="modal-titulo">&gt; Nuevo ticket</h2>
 
     <form [formGroup]="form" (ngSubmit)="guardar()">
       <div class="field">
-        <label>Título</label>
+        <label for="f-titulo">Título</label>
         <input
+          #primerCampo
+          id="f-titulo"
           type="text"
           formControlName="titulo"
           placeholder="Ej. Impresora del piso 2 sin conexión de red"
@@ -13,8 +15,9 @@
       </div>
 
       <div class="field">
-        <label>Descripción del problema</label>
+        <label for="f-descripcion">Descripción del problema</label>
         <textarea
+          id="f-descripcion"
           formControlName="descripcion"
           placeholder="Detalla el problema: qué pasó, cuándo, qué mensaje de error, a quién afecta..."
         ></textarea>
@@ -22,16 +25,16 @@
 
       <div class="field-row">
         <div class="field">
-          <label>Categoría</label>
-          <select formControlName="categoria">
+          <label for="f-categoria">Categoría</label>
+          <select id="f-categoria" formControlName="categoria">
             @for (c of categorias; track c.value) {
               <option [value]="c.value">{{ c.label }}</option>
             }
           </select>
         </div>
         <div class="field">
-          <label>Prioridad</label>
-          <select formControlName="prioridad">
+          <label for="f-prioridad">Prioridad</label>
+          <select id="f-prioridad" formControlName="prioridad">
             @for (p of prioridades; track p.value) {
               <option [value]="p.value">{{ p.label }}</option>
             }
@@ -40,15 +43,15 @@
       </div>
 
       <div class="field">
-        <label>Solicitante (opcional)</label>
-        <input type="text" formControlName="solicitante" placeholder="Nombre de quien reporta" />
+        <label for="f-solicitante">Solicitante (opcional)</label>
+        <input id="f-solicitante" type="text" formControlName="solicitante" placeholder="Nombre de quien reporta" />
       </div>
 
       @if (form.invalid && (form.touched || form.dirty)) {
-        <div class="err">El título y la descripción son obligatorios.</div>
+        <div class="err" role="alert">El título y la descripción son obligatorios.</div>
       }
       @if (error()) {
-        <div class="err">{{ error() }}</div>
+        <div class="err" role="alert">{{ error() }}</div>
       }
 
       <div class="modal-actions">

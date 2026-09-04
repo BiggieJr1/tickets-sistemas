@@ -1,4 +1,4 @@
-import { Component, model } from '@angular/core';
+import { Component, computed, model } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CATEGORIAS, ESTADOS, PRIORIDADES } from '../../models/ticket.model';
 
@@ -20,4 +20,15 @@ export class TicketFilterBarComponent {
   readonly categorias = CATEGORIAS;
   readonly prioridades = PRIORIDADES;
   readonly estados = ESTADOS;
+
+  readonly hayFiltrosActivos = computed(
+    () => !!(this.busqueda() || this.categoria() || this.prioridad() || this.estado())
+  );
+
+  limpiar(): void {
+    this.busqueda.set('');
+    this.categoria.set('');
+    this.prioridad.set('');
+    this.estado.set('');
+  }
 }

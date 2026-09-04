@@ -2,12 +2,16 @@
   <span>Categoría: <b>{{ labelDe(categorias, ticket().categoria) }}</b></span>
   <span>Solicitante: <b>{{ ticket().solicitante ?? '—' }}</b></span>
   <span>Creado: <b>{{ ticket().creado | date: 'medium' }}</b></span>
+  @if (ticket().actualizado) {
+    <span>Actualizado: <b>{{ ticket().actualizado | date: 'medium' }}</b></span>
+  }
 </div>
 
 <p>{{ ticket().descripcion }}</p>
 
 <div class="detail-actions">
   <select
+    aria-label="Cambiar estado del ticket"
     [ngModel]="ticket().estado"
     (ngModelChange)="estadoChange.emit($event)"
   >
@@ -17,6 +21,7 @@
   </select>
 
   <select
+    aria-label="Cambiar prioridad del ticket"
     [ngModel]="ticket().prioridad"
     (ngModelChange)="prioridadChange.emit($event)"
   >

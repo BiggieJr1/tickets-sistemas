@@ -16,12 +16,16 @@
     [(estado)]="estado"
   />
 
-  @if (ticketsService.loading()) {
-    <div class="loading">Cargando tickets...</div>
-  } @else if (ticketsService.error()) {
-    <div class="err-banner">{{ ticketsService.error() }}</div>
+  @if (ticketsService.error()) {
+    <div class="err-banner" role="alert">{{ ticketsService.error() }}</div>
+  }
+
+  @if (ticketsService.loading() && ticketsService.tickets().length === 0) {
+    <div class="loading"><span class="spinner"></span> Cargando tickets...</div>
   } @else if (ticketsService.tickets().length === 0) {
-    <div class="empty">Todavía no hay tickets. Crea el primero con "+ Nuevo ticket".</div>
+    @if (!ticketsService.error()) {
+      <div class="empty">Todavía no hay tickets. Crea el primero con "+ Nuevo ticket".</div>
+    }
   } @else if (ticketsFiltrados().length === 0) {
     <div class="empty">Ningún ticket coincide con estos filtros.</div>
   } @else {

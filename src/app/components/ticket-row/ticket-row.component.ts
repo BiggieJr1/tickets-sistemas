@@ -21,6 +21,10 @@ export class TicketRowComponent {
   readonly ticket = input.required<Ticket>();
   readonly expandido = input(false);
 
+  protected get detalleId(): string {
+    return `detalle-${this.ticket().id}`;
+  }
+
   readonly toggle = output<void>();
   readonly estadoChange = output<EstadoValue>();
   readonly prioridadChange = output<PrioridadValue>();

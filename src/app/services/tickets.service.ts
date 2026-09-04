@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -11,6 +11,19 @@ import {
 // Ajusta esto si la API no queda detrás de un proxy /api en el mismo dominio
 // (en dev, configúralo en proxy.conf.json de Angular CLI).
 const API_BASE = '/api/tickets';
+
+// Extrae un mensaje legible de un error HTTP: prioriza lo que mande el
+// backend (string plano o { message }) antes que el texto genérico que
+// arma Angular ("Http failure response for ...").
+export function extraerMensajeError(e: unknown): string {
+  if (e instanceof HttpErrorResponse) {
+    if (e.status === 0) return 'No se pudo conectar con la API.';
+    if (typeof e.error === 'string' && e.error.trim()) return e.error;
+    if (e.error?.message) return String(e.error.message);
+    return `Error ${e.status}: ${e.statusText || 'algo salió mal'}.`;
+  }
+  return 'No se pudo conectar con la API.';
+}
 
 @Injectable({ providedIn: 'root' })
 export class TicketsService {
@@ -42,22 +55,37 @@ export class TicketsService {
   }
 
   async cambiarEstado(id: number, estado: EstadoValue): Promise<void> {
-    const actualizado = await firstValueFrom(
-      this.http.patch<Ticket>(`${API_BASE}/${id}/estado`, { estado })
-    );
-    this.reemplazar(actualizado);
+    this.error.set(null);
+    try {
+      const actualizado = await firstValueFrom(
+        this.http.patch<Ticket>(`${API_BASE}/${id}/estado`, { estado })
+      );
+      this.reemplazar(actualizado);
+    } catch (e) {
+      this.error.set(extraerMensajeError(e));
+    }
   }
 
   async cambiarPrioridad(id: number, prioridad: PrioridadValue): Promise<void> {
-    const actualizado = await firstValueFrom(
-      this.http.patch<Ticket>(`${API_BASE}/${id}/prioridad`, { prioridad })
-    );
-    this.reemplazar(actualizado);
+    this.error.set(null);
+    try {
+      const actualizado = await firstValueFrom(
+        this.http.patch<Ticket>(`${API_BASE}/${id}/prioridad`, { prioridad })
+      );
+      this.reemplazar(actualizado);
+    } catch (e) {
+      this.error.set(extraerMensajeError(e));
+    }
   }
 
   async eliminar(id: number): Promise<void> {
-    await firstValueFrom(this.http.delete<void>(`${API_BASE}/${id}`));
-    this.tickets.update((lista) => lista.filter((t) => t.id !== id));
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.http.delete<void>(`${API_BASE}/${id}`));
+      this.tickets.update((lista) => lista.filter((t) => t.id !== id));
+    } catch (e) {
+      this.error.set(extraerMensajeError(e));
+    }
   }
 
   private reemplazar(actualizado: Ticket): void {
@@ -67,7 +95,6 @@ export class TicketsService {
   }
 
   private mensajeError(e: unknown): string {
-    if (e instanceof Object && 'message' in e) return String((e as any).message);
-    return 'No se pudo conectar con la API.';
+    return extraerMensajeError(e);
   }
 }

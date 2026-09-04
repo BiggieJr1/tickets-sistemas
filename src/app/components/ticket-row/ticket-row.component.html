@@ -1,5 +1,11 @@
 <div class="ticket" [class]="claseBordePrioridad()">
-  <div class="ticket-row" (click)="toggle.emit()">
+  <button
+    type="button"
+    class="ticket-row"
+    [attr.aria-expanded]="expandido()"
+    [attr.aria-controls]="detalleId"
+    (click)="toggle.emit()"
+  >
     <span class="t-id">{{ ticket().codigoTicket }}</span>
     <span class="t-title">{{ ticket().titulo }}</span>
     <span class="badge cat">{{ categoriaCodigo[ticket().categoria] }}</span>
@@ -8,10 +14,10 @@
     </span>
     <span class="badge estado">{{ ticket().estado }}</span>
     <span class="t-date">{{ ticket().creado | date: 'dd MMM' }}</span>
-  </div>
+  </button>
 
   @if (expandido()) {
-    <div class="ticket-detail open" (click)="$event.stopPropagation()">
+    <div class="ticket-detail open" [id]="detalleId" (click)="$event.stopPropagation()">
       <app-ticket-detail
         [ticket]="ticket()"
         (estadoChange)="estadoChange.emit($event)"
