@@ -4,6 +4,7 @@ import {
   PRIORIDAD_ORDEN,
   PrioridadValue,
 } from '../../models/ticket.model';
+import { ColaboradoresService } from '../../services/colaboradores.service';
 import { TicketsService } from '../../services/tickets.service';
 import { TicketFilterBarComponent } from '../ticket-filter-bar/ticket-filter-bar.component';
 import { TicketRowComponent } from '../ticket-row/ticket-row.component';
@@ -18,6 +19,7 @@ import { NewTicketModalComponent } from '../new-ticket-modal/new-ticket-modal.co
 })
 export class TicketListComponent implements OnInit {
   protected ticketsService = inject(TicketsService);
+  protected colaboradoresService = inject(ColaboradoresService);
 
   // Estado de filtros (bindeado bidireccionalmente por ticket-filter-bar)
   readonly busqueda = signal('');
@@ -52,6 +54,8 @@ export class TicketListComponent implements OnInit {
 
   ngOnInit(): void {
     this.ticketsService.cargar();
+    // Solo colaboradores activos: son los que tiene sentido poder asignar.
+    this.colaboradoresService.cargar(true);
   }
 
   toggleExpandido(id: number): void {
@@ -64,6 +68,10 @@ export class TicketListComponent implements OnInit {
 
   onPrioridadChange(id: number, prioridad: PrioridadValue): void {
     this.ticketsService.cambiarPrioridad(id, prioridad);
+  }
+
+  onAsignacionChange(id: number, colaboradorId: number | null): void {
+    this.ticketsService.asignar(id, colaboradorId);
   }
 
   onEliminar(id: number): void {

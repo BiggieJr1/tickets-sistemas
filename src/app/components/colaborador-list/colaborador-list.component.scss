@@ -1,0 +1,227 @@
+:host {
+  display: block;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.header h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.btn-new {
+  background: var(--accent);
+  color: #08211d;
+  border: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+  padding: 40px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.err-banner {
+  background: var(--crit-dim);
+  border: 1px solid var(--crit);
+  color: var(--crit);
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.tabla th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.tabla td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.tabla tr.inactivo td {
+  color: var(--muted);
+}
+.tabla input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.reset-inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.reset-inline input {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  width: 160px;
+}
+.btn-mini {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-mini-accent {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-mini:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+// Modal de alta — mismo lenguaje visual que new-ticket-modal.
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 14, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 420px;
+  padding: 22px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+}
+.modal h2 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  margin: 0 0 16px;
+}
+.field {
+  margin-bottom: 14px;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.field input {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+}
+.field input:focus {
+  border-color: var(--accent);
+}
+.field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+.field-checkbox input {
+  width: auto;
+  accent-color: var(--accent);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-save {
+  background: var(--accent);
+  border: none;
+  color: #08211d;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 9px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.err {
+  color: var(--crit);
+  font-size: 12px;
+  margin-top: 8px;
+}

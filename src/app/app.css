@@ -1,0 +1,44 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+.topbar .brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+.topbar a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.topbar a:hover {
+  color: var(--accent);
+}
+.topbar .spacer {
+  flex: 1;
+}
+.topbar .usuario {
+  color: var(--muted);
+}
+.btn-salir {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+.btn-salir:hover {
+  border-color: var(--crit);
+  color: var(--crit);
+}

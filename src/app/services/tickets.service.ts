@@ -1,5 +1,5 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, isDevMode, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   EstadoValue,
@@ -7,26 +7,9 @@ import {
   Ticket,
   TicketCreateDto,
 } from '../models/ticket.model';
+import { API_ROOT, extraerMensajeError } from './api.util';
 
-// En desarrollo (`ng serve`) se usa la ruta relativa `/api/tickets`, que
-// proxy.conf.json redirige a http://localhost:5080 (tu API corriendo local).
-// En producción (build para Netlify) apunta directo a la API pública en Railway.
-const API_BASE = isDevMode()
-  ? '/api/tickets'
-  : 'https://tickets-sistemas-backend-production.up.railway.app/api/tickets';
-
-// Extrae un mensaje legible de un error HTTP: prioriza lo que mande el
-// backend (string plano o { message }) antes que el texto genérico que
-// arma Angular ("Http failure response for ...").
-export function extraerMensajeError(e: unknown): string {
-  if (e instanceof HttpErrorResponse) {
-    if (e.status === 0) return 'No se pudo conectar con la API.';
-    if (typeof e.error === 'string' && e.error.trim()) return e.error;
-    if (e.error?.message) return String(e.error.message);
-    return `Error ${e.status}: ${e.statusText || 'algo salió mal'}.`;
-  }
-  return 'No se pudo conectar con la API.';
-}
+const API_BASE = `${API_ROOT}/tickets`;
 
 @Injectable({ providedIn: 'root' })
 export class TicketsService {
@@ -45,7 +28,7 @@ export class TicketsService {
       const data = await firstValueFrom(this.http.get<Ticket[]>(API_BASE));
       this.tickets.set(data);
     } catch (e) {
-      this.error.set(this.mensajeError(e));
+      this.error.set(extraerMensajeError(e));
     } finally {
       this.loading.set(false);
     }
@@ -81,6 +64,18 @@ export class TicketsService {
     }
   }
 
+  async asignar(id: number, colaboradorId: number | null): Promise<void> {
+    this.error.set(null);
+    try {
+      const actualizado = await firstValueFrom(
+        this.http.patch<Ticket>(`${API_BASE}/${id}/asignacion`, { colaboradorId })
+      );
+      this.reemplazar(actualizado);
+    } catch (e) {
+      this.error.set(extraerMensajeError(e));
+    }
+  }
+
   async eliminar(id: number): Promise<void> {
     this.error.set(null);
     try {
@@ -95,9 +90,5 @@ export class TicketsService {
     this.tickets.update((lista) =>
       lista.map((t) => (t.id === actualizado.id ? actualizado : t))
     );
-  }
-
-  private mensajeError(e: unknown): string {
-    return extraerMensajeError(e);
   }
 }

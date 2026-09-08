@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Colaborador } from '../../models/colaborador.model';
 import {
   CATEGORIA_CODIGO,
   EstadoValue,
@@ -20,6 +21,7 @@ import { TicketDetailComponent } from '../ticket-detail/ticket-detail.component'
 export class TicketRowComponent {
   readonly ticket = input.required<Ticket>();
   readonly expandido = input(false);
+  readonly colaboradores = input<Colaborador[]>([]);
 
   protected get detalleId(): string {
     return `detalle-${this.ticket().id}`;
@@ -28,6 +30,7 @@ export class TicketRowComponent {
   readonly toggle = output<void>();
   readonly estadoChange = output<EstadoValue>();
   readonly prioridadChange = output<PrioridadValue>();
+  readonly asignacionChange = output<number | null>();
   readonly eliminar = output<void>();
 
   readonly categoriaCodigo = CATEGORIA_CODIGO;

@@ -11,7 +11,8 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CATEGORIAS } from '../../models/ticket.model';
-import { TicketsService, extraerMensajeError } from '../../services/tickets.service';
+import { extraerMensajeError } from '../../services/api.util';
+import { TicketsService } from '../../services/tickets.service';
 
 @Component({
   selector: 'app-new-ticket-modal',

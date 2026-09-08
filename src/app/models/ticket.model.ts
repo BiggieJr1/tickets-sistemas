@@ -14,6 +14,9 @@ export interface Ticket {
   prioridad: PrioridadValue;
   estado: EstadoValue;
   solicitante: string;
+  asignadoAId: number | null;
+  asignadoANombre: string | null;
+  actualizadoPorNombre: string | null;
   creado: string;
   actualizado: string | null;
 }

@@ -1,0 +1,109 @@
+<div class="app">
+  <div class="header">
+    <h1>&gt; Colaboradores</h1>
+    <button class="btn-new" (click)="modalAbierto.set(true)">+ Nuevo colaborador</button>
+  </div>
+
+  @if (error()) {
+    <div class="err-banner" role="alert">{{ error() }}</div>
+  }
+  @if (colaboradoresService.error()) {
+    <div class="err-banner" role="alert">{{ colaboradoresService.error() }}</div>
+  }
+
+  @if (colaboradoresService.loading() && colaboradoresService.colaboradores().length === 0) {
+    <div class="loading"><span class="spinner"></span> Cargando colaboradores...</div>
+  } @else {
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Administrador</th>
+          <th>Activo</th>
+          <th>Contraseña</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of colaboradoresService.colaboradores(); track c.id) {
+          <tr [class.inactivo]="!c.activo">
+            <td>{{ c.nombreCompleto }}</td>
+            <td>{{ c.email }}</td>
+            <td>
+              <input type="checkbox" [checked]="c.esAdministrador" (change)="toggleAdmin(c)" />
+            </td>
+            <td>
+              <input type="checkbox" [checked]="c.activo" (change)="toggleActivo(c)" />
+            </td>
+            <td>
+              @if (resetId() === c.id) {
+                <div class="reset-inline">
+                  <input
+                    type="password"
+                    placeholder="Nueva contraseña (mín. 8)"
+                    [ngModel]="resetPassword()"
+                    (ngModelChange)="resetPassword.set($event)"
+                  />
+                  <button
+                    type="button"
+                    class="btn-mini btn-mini-accent"
+                    [disabled]="reseteando() || resetPassword().trim().length < 8"
+                    (click)="confirmarReset(c.id)"
+                  >
+                    Guardar
+                  </button>
+                  <button type="button" class="btn-mini" (click)="cancelarReset()">Cancelar</button>
+                </div>
+              } @else {
+                <button type="button" class="btn-mini" (click)="iniciarReset(c.id)">Resetear</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+@if (modalAbierto()) {
+  <div class="overlay" (click)="modalAbierto.set(false)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" (click)="$event.stopPropagation()">
+      <h2 id="modal-titulo">&gt; Nuevo colaborador</h2>
+
+      <form [formGroup]="form" (ngSubmit)="crear()">
+        <div class="field">
+          <label for="f-nombre">Nombre completo</label>
+          <input id="f-nombre" type="text" formControlName="nombreCompleto" />
+        </div>
+
+        <div class="field">
+          <label for="f-email">Correo</label>
+          <input id="f-email" type="email" formControlName="email" />
+        </div>
+
+        <div class="field">
+          <label for="f-password">Contraseña</label>
+          <input id="f-password" type="password" formControlName="password" />
+        </div>
+
+        <div class="field field-checkbox">
+          <label>
+            <input type="checkbox" formControlName="esAdministrador" />
+            Es administrador
+          </label>
+        </div>
+
+        @if (form.invalid && (form.touched || form.dirty)) {
+          <div class="err" role="alert">Nombre, correo y una contraseña de al menos 8 caracteres son obligatorios.</div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="modalAbierto.set(false)">Cancelar</button>
+          <button type="submit" class="btn-save" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando...' : 'Guardar colaborador' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

@@ -20,8 +20,10 @@
     <div class="ticket-detail open" [id]="detalleId" (click)="$event.stopPropagation()">
       <app-ticket-detail
         [ticket]="ticket()"
+        [colaboradores]="colaboradores()"
         (estadoChange)="estadoChange.emit($event)"
         (prioridadChange)="prioridadChange.emit($event)"
+        (asignacionChange)="asignacionChange.emit($event)"
         (eliminar)="eliminar.emit()"
       />
     </div>

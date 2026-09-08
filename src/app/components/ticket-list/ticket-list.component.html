@@ -34,9 +34,11 @@
         <app-ticket-row
           [ticket]="t"
           [expandido]="idExpandido() === t.id"
+          [colaboradores]="colaboradoresService.colaboradores()"
           (toggle)="toggleExpandido(t.id)"
           (estadoChange)="onEstadoChange(t.id, $event)"
           (prioridadChange)="onPrioridadChange(t.id, $event)"
+          (asignacionChange)="onAsignacionChange(t.id, $event)"
           (eliminar)="onEliminar(t.id)"
         />
       }

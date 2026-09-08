@@ -1,9 +1,15 @@
 <div class="detail-meta">
   <span>Categoría: <b>{{ labelDe(categorias, ticket().categoria) }}</b></span>
   <span>Solicitante: <b>{{ ticket().solicitante ?? '—' }}</b></span>
+  <span>Asignado a: <b>{{ ticket().asignadoANombre ?? 'Sin asignar' }}</b></span>
   <span>Creado: <b>{{ ticket().creado | date: 'medium' }}</b></span>
   @if (ticket().actualizado) {
-    <span>Actualizado: <b>{{ ticket().actualizado | date: 'medium' }}</b></span>
+    <span>
+      Actualizado: <b>{{ ticket().actualizado | date: 'medium' }}</b>
+      @if (ticket().actualizadoPorNombre) {
+        por <b>{{ ticket().actualizadoPorNombre }}</b>
+      }
+    </span>
   }
 </div>
 
@@ -30,5 +36,18 @@
     }
   </select>
 
-  <button class="btn-del" (click)="confirmarEliminar()">Eliminar</button>
+  <select
+    aria-label="Asignar ticket a un colaborador"
+    [ngModel]="ticket().asignadoAId ?? ''"
+    (ngModelChange)="onAsignacionChange($event)"
+  >
+    <option value="">Sin asignar</option>
+    @for (c of colaboradores(); track c.id) {
+      <option [value]="c.id">{{ c.nombreCompleto }}</option>
+    }
+  </select>
+
+  @if (esAdmin()) {
+    <button class="btn-del" (click)="confirmarEliminar()">Eliminar</button>
+  }
 </div>

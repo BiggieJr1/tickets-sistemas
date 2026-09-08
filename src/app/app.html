@@ -1,1 +1,13 @@
+@if (auth.currentUser(); as usuario) {
+  <div class="topbar">
+    <a routerLink="/tickets" class="brand">&gt; Centro de Tickets</a>
+    <span class="spacer"></span>
+    @if (auth.isAdmin()) {
+      <a routerLink="/colaboradores">Colaboradores</a>
+    }
+    <span class="usuario">{{ usuario.nombreCompleto }}</span>
+    <button type="button" class="btn-salir" (click)="salir()">Salir</button>
+  </div>
+}
+
 <router-outlet />
