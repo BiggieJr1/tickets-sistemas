@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CATEGORIAS, PRIORIDADES } from '../../models/ticket.model';
+import { CATEGORIAS } from '../../models/ticket.model';
 import { TicketsService, extraerMensajeError } from '../../services/tickets.service';
 
 @Component({
@@ -32,7 +32,6 @@ export class NewTicketModalComponent implements AfterViewInit, OnDestroy {
   readonly error = signal<string | null>(null);
 
   readonly categorias = CATEGORIAS;
-  readonly prioridades = PRIORIDADES;
 
   private readonly overflowPrevio = typeof document !== 'undefined' ? document.body.style.overflow : '';
 
@@ -54,8 +53,7 @@ export class NewTicketModalComponent implements AfterViewInit, OnDestroy {
     titulo: ['', [Validators.required, Validators.maxLength(120)]],
     descripcion: ['', [Validators.required, Validators.maxLength(4000)]],
     categoria: [this.categorias[0].value, Validators.required],
-    prioridad: [this.prioridades[0].value, Validators.required],
-    solicitante: [''],
+    solicitante: ['', [Validators.required, Validators.maxLength(80)]],
   });
 
   async guardar(): Promise<void> {
@@ -73,8 +71,7 @@ export class NewTicketModalComponent implements AfterViewInit, OnDestroy {
         titulo: valores.titulo.trim(),
         descripcion: valores.descripcion.trim(),
         categoria: valores.categoria,
-        prioridad: valores.prioridad,
-        solicitante: valores.solicitante.trim() || null,
+        solicitante: valores.solicitante.trim(),
       });
       this.cerrar.emit();
     } catch (e) {

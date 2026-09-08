@@ -23,32 +23,22 @@
         ></textarea>
       </div>
 
-      <div class="field-row">
-        <div class="field">
-          <label for="f-categoria">Categoría</label>
-          <select id="f-categoria" formControlName="categoria">
-            @for (c of categorias; track c.value) {
-              <option [value]="c.value">{{ c.label }}</option>
-            }
-          </select>
-        </div>
-        <div class="field">
-          <label for="f-prioridad">Prioridad</label>
-          <select id="f-prioridad" formControlName="prioridad">
-            @for (p of prioridades; track p.value) {
-              <option [value]="p.value">{{ p.label }}</option>
-            }
-          </select>
-        </div>
+      <div class="field">
+        <label for="f-categoria">Categoría</label>
+        <select id="f-categoria" formControlName="categoria">
+          @for (c of categorias; track c.value) {
+            <option [value]="c.value">{{ c.label }}</option>
+          }
+        </select>
       </div>
 
       <div class="field">
-        <label for="f-solicitante">Solicitante (opcional)</label>
+        <label for="f-solicitante">Solicitante</label>
         <input id="f-solicitante" type="text" formControlName="solicitante" placeholder="Nombre de quien reporta" />
       </div>
 
       @if (form.invalid && (form.touched || form.dirty)) {
-        <div class="err" role="alert">El título y la descripción son obligatorios.</div>
+        <div class="err" role="alert">El título, la descripción y el solicitante son obligatorios.</div>
       }
       @if (error()) {
         <div class="err" role="alert">{{ error() }}</div>

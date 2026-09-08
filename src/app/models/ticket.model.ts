@@ -2,7 +2,7 @@
 // en TicketsSistemas.Api), gracias al JsonStringEnumConverter configurado ahí.
 
 export type CategoriaValue = 'Hardware' | 'Software' | 'Red' | 'Accesos' | 'Servidor' | 'Otro';
-export type PrioridadValue = 'Critica' | 'Alta' | 'Media' | 'Baja';
+export type PrioridadValue = 'Critica' | 'Alta' | 'Media' | 'Baja' | 'SinAsignar';
 export type EstadoValue = 'Abierto' | 'EnProgreso' | 'Resuelto' | 'Cerrado';
 
 export interface Ticket {
@@ -13,7 +13,7 @@ export interface Ticket {
   categoria: CategoriaValue;
   prioridad: PrioridadValue;
   estado: EstadoValue;
-  solicitante: string | null;
+  solicitante: string;
   creado: string;
   actualizado: string | null;
 }
@@ -22,8 +22,7 @@ export interface TicketCreateDto {
   titulo: string;
   descripcion: string;
   categoria: CategoriaValue;
-  prioridad: PrioridadValue;
-  solicitante: string | null;
+  solicitante: string;
 }
 
 export interface Opcion<T extends string> {
@@ -41,6 +40,7 @@ export const CATEGORIAS: Opcion<CategoriaValue>[] = [
 ];
 
 export const PRIORIDADES: Opcion<PrioridadValue>[] = [
+  { value: 'SinAsignar', label: 'Sin asignar' },
   { value: 'Critica', label: 'Crítica' },
   { value: 'Alta', label: 'Alta' },
   { value: 'Media', label: 'Media' },
@@ -55,6 +55,7 @@ export const ESTADOS: Opcion<EstadoValue>[] = [
 ];
 
 export const PRIORIDAD_ORDEN: Record<PrioridadValue, number> = {
+  SinAsignar: -1,
   Critica: 0,
   Alta: 1,
   Media: 2,
