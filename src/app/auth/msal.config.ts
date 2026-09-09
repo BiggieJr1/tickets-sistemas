@@ -14,9 +14,12 @@ export function msalInstance(): IPublicClientApplication {
     auth: {
       clientId: ENTRA_SPA_CLIENT_ID,
       authority: `https://login.microsoftonline.com/${ENTRA_TENANT_ID}`,
-      // Sin redirectUri: MSAL usa el origen actual, que es lo que se
-      // registra en Azure (https://generador-tickets.netlify.app y
-      // http://localhost:4200), sin depender de una ruta concreta.
+      // Sin esto, MSAL manda como redirectUri la URL completa de la página
+      // donde se dio clic (ej. ".../login"), y Azure la rechaza porque lo
+      // que está registrado es el origen sin ruta
+      // (https://generador-tickets.netlify.app, http://localhost:4200).
+      redirectUri: window.location.origin,
+      postLogoutRedirectUri: window.location.origin,
     },
     cache: {
       // localStorage (no sessionStorage) para que la sesión sobreviva un
