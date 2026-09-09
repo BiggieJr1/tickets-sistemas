@@ -288,8 +288,19 @@ IDs reales ya cargados en `entra.config.ts` (frontend) y `appsettings.json` (bac
 
 No son secretos (viajan igual de expuestos que la URL de la API), así que se dejaron escritos directamente en vez de por variable de entorno.
 
-### 9.5 Pendiente
+### 9.5 Se desplegó directo a producción — tres bugs encontrados y arreglados en vivo
+
+La base de Postgres es la misma para local y producción (no hay una separada para pruebas), y la migración se aplica sola al arrancar (`db.Database.Migrate()`). Levantar el backend local hubiera dejado el login viejo roto en Railway mientras tanto, así que se decidió ir directo a desplegar (commit + push a los dos repos, Railway/Netlify despliegan solo) y depurar ahí. Se encontraron y arreglaron tres problemas, cada uno confirmado con los logs de Railway (`Deployment Logs`, filtrando por `EntraAuth`) y la pestaña Network del navegador:
+
+1. **`AADSTS50011` (redirect URI no coincide).** MSAL, si no le fijas `redirectUri`, manda la URL completa de la página donde se dio clic (`.../login`) en vez del origen registrado en Azure. Fix: `redirectUri: window.location.origin` explícito en `msal.config.ts`.
+2. **Token de Microsoft en versión 1 en vez de 2.** El scope expuesto por el asistente del portal ("Expose an API") quedó con `accessTokenAcceptedVersion: null`, que en la práctica emite tokens v1 (`iss: https://sts.windows.net/...`, `ver: "1.0"`) aunque el cliente pida por el endpoint v2 — y `Microsoft.Identity.Web` espera v2 por default. Fix: en el App Registration de la API, editar el **manifiesto de Microsoft Graph** (no el de AAD Graph, que ya se retira) y poner `"api": { "requestedAccessTokenVersion": 2 }`.
+3. **El id del Colaborador se perdía (401 después de validar el token bien).** `Microsoft.Identity.Web` ya mapea el claim `sub` del token al mismo tipo `ClaimTypes.NameIdentifier` que `Program.cs` usaba para guardar el id local — quedaban dos claims del mismo tipo, y `User.FindFirstValue(ClaimTypes.NameIdentifier)` devolvía el `sub` (un id opaco de Microsoft) en vez del id numérico, así que `int.TryParse` fallaba y `AuthController.Me()` / `TicketsController` regresaban 401 aunque el token ya era válido. Se veía en la respuesta como `content-type: application/problem+json` (viene del controller, no del middleware de autenticación) — esa fue la pista. Fix: claim propio `ClaimesColaborador.ColaboradorId` ("colaboradorId") en vez de reusar `ClaimTypes.NameIdentifier`.
+4. **(UX, no bug de seguridad) Se quedaba en `/login` tras loguear bien.** MSAL, al volver del redirect de Microsoft, restaura la página en la que estabas antes de darle clic al botón — no navega directo a `/tickets`. Fix: `LoginComponent` redirige a `/tickets` en su constructor si `auth.currentUser()` ya está seteado.
+
+Probado end-to-end en producción con la cuenta admin sembrada (`raul.galaviz@bisoft.com.mx`): login con Microsoft → entra directo a `/tickets` sin ver el formulario de login.
+
+### 9.6 Pendiente
 
 - Configurar `AzureAd__TenantId` / `AzureAd__ClientId` en Railway (o dejar que tome los valores de `appsettings.json`, que ya no están vacíos) y quitar `JWT_SECRET` / `SEED_ADMIN_PASSWORD`, que ya no se usan.
 - Confirmar que todos los `Colaborador.Email` actuales correspondan a cuentas reales @bisoft.com.mx en el tenant.
-- Probar el login real en el navegador (`ng serve` local y luego en producción) — no se pudo probar end-to-end en esta sesión.
+- Probar el flujo con un colaborador no-admin y con una cuenta de Microsoft que no esté dada de alta (debe rechazar con el mensaje de "cuenta no registrada").
