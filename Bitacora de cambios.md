@@ -13,17 +13,29 @@ El proyecto son **dos repos separados**:
 | Frontend | `Desktop\tickets-sistemas` | App Angular (esta bóveda) |
 | Backend | `D:\tickets-sistemas` | API .NET (`TicketsSistemas.Api`) |
 
+**Índice:**
+1. [[#1. Resumen ejecutivo]]
+2. [[#2. Backend — `D:\tickets-sistemas`|Backend — restablecimiento inicial]]
+3. [[#3. Frontend — `Desktop\tickets-sistemas`|Frontend — UX, accesibilidad y conexión a la API]]
+4. [[#4. Estado actual del repo|Estado del repo (4 sep)]]
+5. [[#5. Arquitectura resultante|Arquitectura resultante (4 sep)]]
+6. [[#6. Sesión del 8 de septiembre (tarde) — cadena de fallos al desplegar|Cadena de fallos al desplegar]]
+7. [[#7. Sesión del 8 de septiembre (tarde) — quién prioriza y quién reporta|Quién prioriza y quién reporta]]
+8. [[#8. Sesión del 8 de septiembre (noche) — colaboradores, login y asignación de tickets|Colaboradores, login y asignación de tickets]]
+9. [[#9. Sesión del 9 de septiembre — login con Microsoft Entra ID|Login con Microsoft Entra ID]]
+
 ---
 
 ## 1. Resumen ejecutivo
 
-Se pasó de una app local a un sistema publicado en la nube:
+Se pasó de una app local a un sistema publicado en la nube, con una identidad real por colaborador:
 
-- La API se restableció y se preparó para exponerse públicamente, con **CORS configurable** y una **API key compartida** (header `X-Api-Key`).
-- El frontend se **conectó a la API real** en Railway y pide la contraseña una sola vez por navegador.
+- La API se restableció y se preparó para exponerse públicamente, con **CORS configurable**.
+- El frontend se **conectó a la API real** en Railway.
 - Se **eliminó SSR** (renderizado en servidor): el frontend quedó como **sitio estático** para Netlify.
 - Se hizo una tanda de mejoras de **UX y accesibilidad** en el listado de tickets.
 - Se limpiaron **secretos**: ninguna cadena de conexión vive en el repo.
+- La autenticación pasó por tres etapas (documentadas conforme avanzan las secciones): **API key compartida** (§2-3) → **colaboradores con contraseña propia y JWT** (§8) → **login real con la cuenta de Microsoft de cada persona** (§9, estado actual).
 
 ---
 
