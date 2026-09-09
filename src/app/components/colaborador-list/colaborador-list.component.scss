@@ -97,39 +97,6 @@
   cursor: pointer;
 }
 
-.reset-inline {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.reset-inline input {
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-size: 12px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  width: 160px;
-}
-.btn-mini {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.btn-mini-accent {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.btn-mini:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 // Modal de alta — mismo lenguaje visual que new-ticket-modal.
 .overlay {
   position: fixed;

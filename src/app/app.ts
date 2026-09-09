@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
 
 @Component({
@@ -10,10 +10,10 @@ import { AuthService } from './services/auth.service';
 })
 export class App {
   protected auth = inject(AuthService);
-  private router = inject(Router);
 
+  // logout() navega fuera de la app (logout de Microsoft) y de vuelta —
+  // no hace falta un navigateByUrl aparte.
   salir(): void {
     this.auth.logout();
-    this.router.navigateByUrl('/login');
   }
 }

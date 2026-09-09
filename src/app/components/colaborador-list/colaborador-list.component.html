@@ -21,7 +21,6 @@
           <th>Correo</th>
           <th>Administrador</th>
           <th>Activo</th>
-          <th>Contraseña</th>
         </tr>
       </thead>
       <tbody>
@@ -34,29 +33,6 @@
             </td>
             <td>
               <input type="checkbox" [checked]="c.activo" (change)="toggleActivo(c)" />
-            </td>
-            <td>
-              @if (resetId() === c.id) {
-                <div class="reset-inline">
-                  <input
-                    type="password"
-                    placeholder="Nueva contraseña (mín. 8)"
-                    [ngModel]="resetPassword()"
-                    (ngModelChange)="resetPassword.set($event)"
-                  />
-                  <button
-                    type="button"
-                    class="btn-mini btn-mini-accent"
-                    [disabled]="reseteando() || resetPassword().trim().length < 8"
-                    (click)="confirmarReset(c.id)"
-                  >
-                    Guardar
-                  </button>
-                  <button type="button" class="btn-mini" (click)="cancelarReset()">Cancelar</button>
-                </div>
-              } @else {
-                <button type="button" class="btn-mini" (click)="iniciarReset(c.id)">Resetear</button>
-              }
             </td>
           </tr>
         }
@@ -81,11 +57,6 @@
           <input id="f-email" type="email" formControlName="email" />
         </div>
 
-        <div class="field">
-          <label for="f-password">Contraseña</label>
-          <input id="f-password" type="password" formControlName="password" />
-        </div>
-
         <div class="field field-checkbox">
           <label>
             <input type="checkbox" formControlName="esAdministrador" />
@@ -94,7 +65,7 @@
         </div>
 
         @if (form.invalid && (form.touched || form.dirty)) {
-          <div class="err" role="alert">Nombre, correo y una contraseña de al menos 8 caracteres son obligatorios.</div>
+          <div class="err" role="alert">Nombre y correo son obligatorios.</div>
         }
 
         <div class="modal-actions">

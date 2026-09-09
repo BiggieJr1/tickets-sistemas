@@ -46,8 +46,4 @@ export class ColaboradoresService {
     );
     return actualizado;
   }
-
-  async resetearPassword(id: number, password: string): Promise<void> {
-    await firstValueFrom(this.http.patch<void>(`${API_BASE}/${id}/password`, { password }));
-  }
 }
