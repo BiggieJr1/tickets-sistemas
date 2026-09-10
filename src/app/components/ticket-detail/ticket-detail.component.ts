@@ -23,8 +23,9 @@ import { AuthService } from '../../services/auth.service';
 export class TicketDetailComponent {
   private auth = inject(AuthService);
 
-  // Eliminar es solo de administradores (el backend también lo exige; esto
-  // evita el "clic y falla con 403" en la interfaz).
+  // Cambiar estado/prioridad/asignación y eliminar son solo de
+  // administradores (el backend también lo exige; esto evita el
+  // "clic y falla con 403" en la interfaz).
   readonly esAdmin = this.auth.isAdmin;
 
   // input.required(): este componente no tiene sentido sin un ticket.

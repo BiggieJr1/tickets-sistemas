@@ -16,38 +16,41 @@
 <p>{{ ticket().descripcion }}</p>
 
 <div class="detail-actions">
-  <select
-    aria-label="Cambiar estado del ticket"
-    [ngModel]="ticket().estado"
-    (ngModelChange)="estadoChange.emit($event)"
-  >
-    @for (e of estados; track e.value) {
-      <option [value]="e.value">{{ e.label }}</option>
-    }
-  </select>
-
-  <select
-    aria-label="Cambiar prioridad del ticket"
-    [ngModel]="ticket().prioridad"
-    (ngModelChange)="prioridadChange.emit($event)"
-  >
-    @for (p of prioridades; track p.value) {
-      <option [value]="p.value">{{ p.label }}</option>
-    }
-  </select>
-
-  <select
-    aria-label="Asignar ticket a un colaborador"
-    [ngModel]="ticket().asignadoAId ?? ''"
-    (ngModelChange)="onAsignacionChange($event)"
-  >
-    <option value="">Sin asignar</option>
-    @for (c of colaboradores(); track c.id) {
-      <option [value]="c.id">{{ c.nombreCompleto }}</option>
-    }
-  </select>
-
   @if (esAdmin()) {
+    <select
+      aria-label="Cambiar estado del ticket"
+      [ngModel]="ticket().estado"
+      (ngModelChange)="estadoChange.emit($event)"
+    >
+      @for (e of estados; track e.value) {
+        <option [value]="e.value">{{ e.label }}</option>
+      }
+    </select>
+
+    <select
+      aria-label="Cambiar prioridad del ticket"
+      [ngModel]="ticket().prioridad"
+      (ngModelChange)="prioridadChange.emit($event)"
+    >
+      @for (p of prioridades; track p.value) {
+        <option [value]="p.value">{{ p.label }}</option>
+      }
+    </select>
+
+    <select
+      aria-label="Asignar ticket a un colaborador"
+      [ngModel]="ticket().asignadoAId ?? ''"
+      (ngModelChange)="onAsignacionChange($event)"
+    >
+      <option value="">Sin asignar</option>
+      @for (c of colaboradores(); track c.id) {
+        <option [value]="c.id">{{ c.nombreCompleto }}</option>
+      }
+    </select>
+
     <button class="btn-del" (click)="confirmarEliminar()">Eliminar</button>
+  } @else {
+    <span>Estado: <b>{{ labelDe(estados, ticket().estado) }}</b></span>
+    <span>Prioridad: <b>{{ labelDe(prioridades, ticket().prioridad) }}</b></span>
   }
 </div>
