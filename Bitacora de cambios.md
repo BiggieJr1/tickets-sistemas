@@ -1,6 +1,6 @@
 ---
 tags: [tickets-sistemas, bitacora, cambios]
-actualizado: 2026-09-09
+actualizado: 2026-09-10
 ---
 
 # Bitácora de cambios — Tickets Sistemas
@@ -23,6 +23,7 @@ El proyecto son **dos repos separados**:
 7. [[#7. Sesión del 8 de septiembre (tarde) — quién prioriza y quién reporta|Quién prioriza y quién reporta]]
 8. [[#8. Sesión del 8 de septiembre (noche) — colaboradores, login y asignación de tickets|Colaboradores, login y asignación de tickets]]
 9. [[#9. Sesión del 9 de septiembre — login con Microsoft Entra ID|Login con Microsoft Entra ID]]
+10. [[#10. Sesión del 10 de septiembre — pruebas del login con Microsoft y hueco de permisos|Pruebas del login con Microsoft y hueco de permisos]]
 
 ---
 
@@ -315,4 +316,44 @@ Probado end-to-end en producción con la cuenta admin sembrada (`raul.galaviz@bi
 
 - Configurar `AzureAd__TenantId` / `AzureAd__ClientId` en Railway (o dejar que tome los valores de `appsettings.json`, que ya no están vacíos) y quitar `JWT_SECRET` / `SEED_ADMIN_PASSWORD`, que ya no se usan.
 - Confirmar que todos los `Colaborador.Email` actuales correspondan a cuentas reales @bisoft.com.mx en el tenant.
-- Probar el flujo con un colaborador no-admin y con una cuenta de Microsoft que no esté dada de alta (debe rechazar con el mensaje de "cuenta no registrada").
+- ~~Probar el flujo con un colaborador no-admin y con una cuenta de Microsoft que no esté dada de alta (debe rechazar con el mensaje de "cuenta no registrada").~~ Hecho, ver §10.
+
+---
+
+## 10. Sesión del 10 de septiembre — pruebas del login con Microsoft y hueco de permisos
+
+Se retomó el pendiente de §9.6: probar el login en producción con cuentas distintas a la admin sembrada, más una revisión manual del flujo normal de tickets.
+
+### 10.1 Pruebas del login
+
+Todo con la app real en `https://generador-tickets.netlify.app` (Netlify) + `https://tickets-sistemas-backend-production.up.railway.app` (Railway):
+
+- **Sesión persistente:** con la sesión de Microsoft ya activa, entrar a `/login` redirige directo a `/tickets` sin mostrar el formulario — el fix del bug #4 (§9.5) sigue funcionando.
+- **CRUD de tickets como admin:** crear, cambiar estado, y eliminar un ticket de prueba funcionó de punta a punta. El registro de auditoría mostró correctamente "Actualizado por Administrador", confirmando que el fix del bug #3 (pérdida del `colaboradorId`, §9.5) sigue resuelto.
+- **Cuenta de Microsoft sin `Colaborador` dado de alta:** probado por Raúl con otra cuenta — la API rechazó con **401**, como se esperaba. Después de dar de alta esa cuenta en `/colaboradores`, el login funcionó y pudo crear tickets con normalidad.
+- **Botón "Salir":** cierra también la sesión de Microsoft en el navegador (no solo la de la app), como estaba documentado en §9.3.
+
+### 10.2 Hueco de permisos encontrado — colaboradores podían modificar cualquier ticket
+
+Al probar con la cuenta no-admin, Raúl notó que un colaborador regular podía cambiar el estado, la prioridad y la asignación de **cualquier** ticket, no solo darle seguimiento al propio. Revisando el código, esto no era un bug sino una decisión de diseño explícita que ya estaba comentada en `TicketsController.cs`: *"Cualquier colaborador logueado puede asignar, no solo administradores: no es una acción sensible, es el día a día de dar seguimiento."* Solo `DELETE` (eliminar ticket) estaba protegido con la policy `"Administrador"`, tanto en frontend como backend.
+
+Se decidió corregirlo en la misma sesión:
+
+- **Backend (`D:\tickets-sistemas`):** se agregó `[Authorize(Policy = "Administrador")]` a los tres endpoints `PATCH /api/tickets/{id}/estado`, `.../prioridad` y `.../asignacion` (antes solo `[Authorize]` genérico a nivel de clase). Usa la misma policy que ya protegía `DELETE`, respaldada por el claim `esAdministrador` que ya viaja en el token desde el cambio a Entra ID (§9.2).
+- **Frontend (`Desktop\tickets-sistemas`):** en `ticket-detail.component`, los tres `<select>` (estado, prioridad, asignación) y el botón "Eliminar" ahora solo se muestran si `auth.isAdmin()`; un colaborador no-admin ve el estado y la prioridad como texto de solo lectura en vez del selector editable — evita el "clic y falla con 403" en la interfaz, igual que ya se hacía con "Eliminar".
+- Verificado en producción tras el despliegue: como admin, los tres selectores y "Eliminar" siguen visibles y el `PATCH` de estado se aplicó correctamente (200, con el registro de auditoría actualizado).
+- Pendiente de que Raúl confirme con la cuenta no-admin que ya no ve los selectores ni puede hacer `PATCH` directo a la API (debería regresar 403).
+
+**Commits:** backend `b94d4f2`, frontend `4973d72` — ambos desplegados directo a producción (mismo patrón de §9.5, sin ambiente de staging separado).
+
+### 10.3 Otros hallazgos menores (no corregidos aún)
+
+- El colaborador **"Juan Perez"** (`juan.perez@ejemplo.com`) no es un correo `@bisoft.com.mx` real del tenant — parece dato de prueba. Está inactivo y no-admin, así que no representa un riesgo real (ni siquiera podría iniciar sesión), pero conviene limpiarlo o confirmarlo al revisar el pendiente de §9.6 sobre los correos de `Colaborador`.
+- `app.routes.ts` no tiene una ruta comodín (`**`): entrar a una URL no reconocida dentro de la app (ej. `/administrador`, que no es una ruta real — el nombre "Administrador" del header es solo el nombre del colaborador logueado, no un link) deja la página en blanco en vez de redirigir a `/tickets` o mostrar un 404.
+
+### 10.4 Pendiente
+
+- Confirmar con la cuenta no-admin que el hueco de permisos de §10.2 quedó cerrado (UI oculta los selectores, y la API responde 403 si se llama directo).
+- Limpiar o confirmar el colaborador de prueba "Juan Perez" (§10.3).
+- Agregar una ruta comodín (`**`) que redirija a `/tickets` (§10.3).
+- Los pendientes de configuración de Railway (`AzureAd__TenantId`/`ClientId`, quitar `JWT_SECRET`/`SEED_ADMIN_PASSWORD`) de §9.6 siguen abiertos.
