@@ -342,7 +342,8 @@ Se decidió corregirlo en la misma sesión:
 - **Backend (`D:\tickets-sistemas`):** se agregó `[Authorize(Policy = "Administrador")]` a los tres endpoints `PATCH /api/tickets/{id}/estado`, `.../prioridad` y `.../asignacion` (antes solo `[Authorize]` genérico a nivel de clase). Usa la misma policy que ya protegía `DELETE`, respaldada por el claim `esAdministrador` que ya viaja en el token desde el cambio a Entra ID (§9.2).
 - **Frontend (`Desktop\tickets-sistemas`):** en `ticket-detail.component`, los tres `<select>` (estado, prioridad, asignación) y el botón "Eliminar" ahora solo se muestran si `auth.isAdmin()`; un colaborador no-admin ve el estado y la prioridad como texto de solo lectura en vez del selector editable — evita el "clic y falla con 403" en la interfaz, igual que ya se hacía con "Eliminar".
 - Verificado en producción tras el despliegue: como admin, los tres selectores y "Eliminar" siguen visibles y el `PATCH` de estado se aplicó correctamente (200, con el registro de auditoría actualizado).
-- Confirmado por Raúl con la cuenta no-admin: ya no se ve ningún selector editable ni el botón "Eliminar" — solo el estado y la prioridad como texto. Queda pendiente confirmar el lado API (un `PATCH` directo a `/estado`, `/prioridad` o `/asignacion` desde esa cuenta debería regresar 403).
+- Confirmado por Raúl con la cuenta no-admin: ya no se ve ningún selector editable ni el botón "Eliminar" — solo el estado y la prioridad como texto.
+- Confirmado también del lado API: con el access token real de esa cuenta no-admin (tomado de `localStorage`, donde MSAL lo cachea) se llamó directo, sin pasar por la UI, a los tres endpoints — los tres regresaron **403**: `PATCH /api/tickets/{id}/estado`, `.../prioridad` y `.../asignacion`. El `GET /api/tickets` con la misma cuenta sigue en 200 (puede ver los tickets, no modificarlos). Hueco de permisos cerrado en ambas capas.
 
 **Commits:** backend `b94d4f2`, frontend `4973d72` — ambos desplegados directo a producción (mismo patrón de §9.5, sin ambiente de staging separado).
 
@@ -353,7 +354,7 @@ Se decidió corregirlo en la misma sesión:
 
 ### 10.4 Pendiente
 
-- ~~Confirmar con la cuenta no-admin que el hueco de permisos de §10.2 quedó cerrado en la UI.~~ Confirmado. Falta solo verificar que la API responda 403 si se llama directo (sin pasar por la UI).
+- ~~Confirmar con la cuenta no-admin que el hueco de permisos de §10.2 quedó cerrado (UI oculta los selectores, y la API responde 403 si se llama directo).~~ Confirmado en ambas capas.
 - Limpiar o confirmar el colaborador de prueba "Juan Perez" (§10.3).
 - Agregar una ruta comodín (`**`) que redirija a `/tickets` (§10.3).
 - Los pendientes de configuración de Railway (`AzureAd__TenantId`/`ClientId`, quitar `JWT_SECRET`/`SEED_ADMIN_PASSWORD`) de §9.6 siguen abiertos.
