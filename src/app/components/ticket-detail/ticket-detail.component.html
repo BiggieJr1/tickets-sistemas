@@ -43,8 +43,8 @@
       (ngModelChange)="onAsignacionChange($event)"
     >
       <option value="">Sin asignar</option>
-      @for (c of colaboradores(); track c.id) {
-        <option [value]="c.id">{{ c.nombreCompleto }}</option>
+      @for (c of opcionesAsignacion(); track c.id) {
+        <option [value]="c.id">{{ c.nombreCompleto }}{{ c.esAdministrador ? '' : ' (ya no asignable)' }}</option>
       }
     </select>
 

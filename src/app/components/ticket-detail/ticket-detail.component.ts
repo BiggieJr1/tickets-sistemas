@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Colaborador } from '../../models/colaborador.model';
@@ -31,8 +31,31 @@ export class TicketDetailComponent {
   // input.required(): este componente no tiene sentido sin un ticket.
   readonly ticket = input.required<Ticket>();
 
-  // Colaboradores activos, para poblar el selector "asignar a".
+  // Colaboradores administradores activos, para poblar el selector "asignar a".
   readonly colaboradores = input<Colaborador[]>([]);
+
+  // Si el ticket ya está asignado a alguien que ya no calificaría para
+  // asignación (le quitaron el rol de admin, o se desactivó), esa persona no
+  // viene en `colaboradores()` — sin esto, el <select> no encontraría su
+  // <option> y mostraría "Sin asignar" aunque el ticket siga asignado a esa
+  // persona, arriesgando una desasignación accidental. Se agrega como opción
+  // extra usando el nombre que ya trae el propio ticket (no hace falta
+  // buscarlo en ninguna lista).
+  readonly opcionesAsignacion = computed(() => {
+    const colaboradores = this.colaboradores();
+    const idActual = this.ticket().asignadoAId;
+    if (idActual == null || colaboradores.some((c) => c.id === idActual)) {
+      return colaboradores;
+    }
+    const huerfano: Colaborador = {
+      id: idActual,
+      nombreCompleto: this.ticket().asignadoANombre ?? `Colaborador #${idActual}`,
+      email: '',
+      esAdministrador: false,
+      activo: false,
+    };
+    return [...colaboradores, huerfano];
+  });
 
   // Outputs simples: el componente no llama al servicio directamente,
   // deja que el contenedor (ticket-list) decida qué hacer — más fácil

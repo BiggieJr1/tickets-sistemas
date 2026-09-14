@@ -52,6 +52,12 @@ export class TicketListComponent implements OnInit {
       });
   });
 
+  // Solo colaboradores administradores: son a quienes se les puede asignar
+  // un ticket (el backend también lo exige en UpdateAsignacion).
+  readonly colaboradoresAsignables = computed(() =>
+    this.colaboradoresService.colaboradores().filter((c) => c.esAdministrador)
+  );
+
   ngOnInit(): void {
     this.ticketsService.cargar();
     // Solo colaboradores activos: son los que tiene sentido poder asignar.
