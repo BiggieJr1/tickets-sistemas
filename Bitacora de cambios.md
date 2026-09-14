@@ -357,4 +357,54 @@ Se decidió corregirlo en la misma sesión:
 - ~~Confirmar con la cuenta no-admin que el hueco de permisos de §10.2 quedó cerrado (UI oculta los selectores, y la API responde 403 si se llama directo).~~ Confirmado en ambas capas.
 - Limpiar o confirmar el colaborador de prueba "Juan Perez" (§10.3).
 - Agregar una ruta comodín (`**`) que redirija a `/tickets` (§10.3).
+
+---
+
+## 11. Sesión del 14 de septiembre — notificaciones por correo (fase 1) y acceso bloqueado en Netlify
+
+### 11.1 Notificaciones por correo — fase 1: avisar a los admins al crear un ticket
+
+Se retomó un plan pendiente (notificaciones por correo) que no había quedado documentado en una sesión anterior. Alcance acordado: empezar solo por el evento "ticket creado → avisa a los administradores"; quedan pendientes "asignación → avisa al colaborador" y "cambio de estado → avisa al solicitante" (este último requiere agregar un campo de correo al alta del ticket, porque hoy `Solicitante` es solo texto libre, sin correo).
+
+Mecanismo elegido: **Microsoft Graph** (`POST /users/{buzón}/sendMail`) en vez de SMTP, para reusar el mismo App Registration de Entra ID que ya existe para el login (§9) — solo hizo falta agregarle el permiso de aplicación **Mail.Send** (con consentimiento de administrador) y un client secret nuevo, sin dar de alta una cuenta SMTP aparte. El buzón remitente es una cuenta de admin existente (`raul.galaviz@bisoft.com.mx`), no una cuenta de servicio dedicada.
+
+**Backend (`D:\tickets-sistemas`):**
+- `Services/IEmailNotificationService.cs` + `GraphEmailNotificationService.cs` (nuevo): pide un token con `ClientSecretCredential` (paquete `Azure.Identity`, agregado al `.csproj`) y llama a Graph con `IHttpClientFactory`. Si falta `Graph:ClientSecret` o `Graph:SenderUpn`, no lanza excepción — solo loguea un warning y no envía nada; y si el envío falla ya con la config completa, el error se atrapa dentro del servicio (try/catch) para que un correo caído nunca tumbe la creación del ticket.
+- `Program.cs`: `AddHttpClient()` + registro de `IEmailNotificationService`.
+- `TicketsController.Create`: tras el `SaveChangesAsync`, junta los correos de `Colaboradores` con `EsAdministrador == true && Activo == true` y llama a `NotificarTicketCreadoAsync`. Le llega a **todos** los admins activos, sin límite ni admin "principal".
+- `appsettings.json`: se agregó `Graph:SenderUpn` (vacío, placeholder — no es secreto). **`Graph:ClientSecret` nunca se puso ahí**, solo por variable de entorno (`Graph__ClientSecret` en Railway) o `dotnet user-secrets` en local, mismo criterio que `ConnectionStrings__Default`.
+- Se corrió `dotnet user-secrets init` sobre el proyecto (agregó `UserSecretsId` al `.csproj`, no es secreto) para poder probar localmente sin tocar `appsettings.json`.
+
+### 11.2 Prueba aislada de las credenciales antes de tocar producción
+
+Antes de gastar un despliegue, se probó el flujo de Graph completo (pedir token + `sendMail`) con un mini programa de consola aparte (`graph-mail-test`, en una carpeta temporal fuera de cualquier repo), configurado con el mismo `UserSecretsId` que `TicketsSistemas.Api` para leer `Graph:ClientSecret` / `Graph:SenderUpn` sin que el secreto pasara en texto plano por ningún comando de shell (un intento inicial de probarlo por `curl` con el secreto inline fue bloqueado por el clasificador de seguridad de Auto Mode — "Credential Materialization" — y no se intentó rodear). La prueba salió `202 Accepted` y el correo llegó a la bandeja real, confirmando que el client secret, el permiso `Mail.Send` y el consentimiento de administrador quedaron bien configurados antes de tocar el flujo real de creación de tickets.
+
+### 11.3 Desplegado a producción
+
+Commit backend `28469e3` ("feat: notificar por correo a admins cuando se crea un ticket"), commiteado local primero (sin push, mientras se esperaba por presupuesto de Railway/Netlify) y con push a `main` ya después, a pedido explícito. Railway redespliega automático en cada push a `main` (§DEPLOY-NUBE.md), así que el push disparó un deploy nuevo aunque en ese momento todavía no estaban puestas las variables de Graph (el servicio sigue funcionando igual sin ellas, solo no manda correos — por el warning en vez de excepción de §11.1).
+
+**Primer intento fallido:** con las variables ya puestas en Railway, se creó un ticket de prueba y no llegó ningún correo (revisado también spam, tampoco estaba ahí). El log de Railway lo dejó clarísimo:
+
+```
+warn: TicketsSistemas.Api.Services.GraphEmailNotificationService[0]
+      Notificaciones por correo desactivadas: falta configurar Graph:ClientSecret y/o Graph:SenderUpn.
+```
+
+Causa: las variables se habían guardado en Railway con **un solo** guion bajo (`Graph_ClientSecret`, `Graph_SenderUpn`) en vez de doble (`Graph__ClientSecret`, `Graph__SenderUpn`). El doble guion bajo es la notación especial de ASP.NET Core para representar `:` en nombres de variables de entorno (mismo patrón ya usado en `ConnectionStrings__Default` y `AzureAd__TenantId`) — con uno solo, la app buscaba una clave que no existía y el `IsNullOrWhiteSpace` del chequeo en `GraphEmailNotificationService` siempre daba `true`.
+
+Fix: corregir los nombres a `Graph__ClientSecret` / `Graph__SenderUpn` (doble guion bajo) en Railway y redesplegar. Confirmado con un segundo ticket de prueba: el correo llegó correctamente a los administradores activos, incluyendo a Hector.
+
+### 11.4 Acceso bloqueado en Netlify (no relacionado a la app)
+
+Un colaborador (Hector, `hectorb@bisoft.com.mx`) intentó entrar a `https://generador-tickets.netlify.app` y le salió "You don't have access to this site... Ask the owner to invite you." — **no era un problema de la app ni del login de Microsoft**: es la protección propia de Netlify ("Netlify Access control" / Visitor access), que en este sitio estaba aplicada también al dominio de producción (no solo a los deploy previews de otras ramas), y solo dejaba pasar a miembros del team de Netlify. Confirmado con `curl -D -` a la URL: devolvía `401` con un `Login Redirect` hacia `app.netlify.com/edge-access` en vez del HTML de la app.
+
+Fix: en Netlify, **Site configuration → Sharing/Site protection → Visitor access**, se cambió a **Public**. Verificado de nuevo con `curl`: pasó a `200 OK` sirviendo el HTML real de la app. El login de Microsoft (Entra ID) sigue siendo la barrera real de quién entra; esta capa de Netlify solo estaba de más.
+
+Con eso, Hector pudo entrar. Ya estaba dado de alta como `Colaborador` admin activo desde antes, así que en cuanto se completó §11.3 empezó a recibir también las notificaciones de ticket creado.
+
+### 11.5 Pendiente
+
+- Notificar al colaborador asignado cuando se le asigna un ticket (evento "asignación", ya priorizado por Raúl para después de esta fase).
+- Notificar al solicitante cuando cambia el estado del ticket — requiere agregar un campo de correo al alta (`TicketCreateDto.Solicitante` hoy es solo texto libre, sin correo).
+- Revisar si conviene mover el remitente de Graph de una cuenta de admin personal (`raul.galaviz@bisoft.com.mx`) a una cuenta de servicio dedicada (ej. `notificaciones@bisoft.com.mx`), evaluado y descartado por ahora para no complicar el alta.
 - Los pendientes de configuración de Railway (`AzureAd__TenantId`/`ClientId`, quitar `JWT_SECRET`/`SEED_ADMIN_PASSWORD`) de §9.6 siguen abiertos.
