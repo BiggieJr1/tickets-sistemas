@@ -19,6 +19,9 @@ export class ColaboradorListComponent implements OnInit {
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
 
+  readonly importando = signal(false);
+  readonly mensajeImportacion = signal<string | null>(null);
+
   readonly form = this.fb.nonNullable.group({
     nombreCompleto: ['', [Validators.required, Validators.maxLength(120)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
@@ -45,6 +48,22 @@ export class ColaboradorListComponent implements OnInit {
       this.error.set(extraerMensajeError(e));
     } finally {
       this.guardando.set(false);
+    }
+  }
+
+  async importarDesdeEntra(): Promise<void> {
+    this.importando.set(true);
+    this.error.set(null);
+    this.mensajeImportacion.set(null);
+    try {
+      const r = await this.colaboradoresService.importarDesdeEntra();
+      this.mensajeImportacion.set(
+        `Se importaron ${r.importados} colaboradores nuevos (${r.yaExistian} ya existían, ${r.total} en el directorio).`
+      );
+    } catch (e) {
+      this.error.set(extraerMensajeError(e));
+    } finally {
+      this.importando.set(false);
     }
   }
 

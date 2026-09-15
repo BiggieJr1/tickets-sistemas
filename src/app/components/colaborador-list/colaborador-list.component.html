@@ -1,6 +1,9 @@
 <div class="app">
   <div class="header">
     <h1>&gt; Colaboradores</h1>
+    <button class="btn-new" [disabled]="importando()" (click)="importarDesdeEntra()">
+      {{ importando() ? 'Importando...' : 'Importar desde Microsoft 365' }}
+    </button>
     <button class="btn-new" (click)="modalAbierto.set(true)">+ Nuevo colaborador</button>
   </div>
 
@@ -9,6 +12,9 @@
   }
   @if (colaboradoresService.error()) {
     <div class="err-banner" role="alert">{{ colaboradoresService.error() }}</div>
+  }
+  @if (mensajeImportacion()) {
+    <div class="ok-banner" role="status">{{ mensajeImportacion() }}</div>
   }
 
   @if (colaboradoresService.loading() && colaboradoresService.colaboradores().length === 0) {

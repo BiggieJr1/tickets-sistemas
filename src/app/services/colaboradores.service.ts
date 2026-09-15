@@ -46,4 +46,20 @@ export class ColaboradoresService {
     );
     return actualizado;
   }
+
+  // Trae el directorio de Entra ID y da de alta como no-admin/activo a quien
+  // no exista ya (por correo). No modifica a los colaboradores existentes.
+  async importarDesdeEntra(): Promise<ImportResultado> {
+    const resultado = await firstValueFrom(
+      this.http.post<ImportResultado>(`${API_BASE}/importar-entra`, {})
+    );
+    await this.cargar();
+    return resultado;
+  }
+}
+
+export interface ImportResultado {
+  total: number;
+  importados: number;
+  yaExistian: number;
 }
