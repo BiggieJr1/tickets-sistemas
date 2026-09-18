@@ -28,6 +28,18 @@ export interface TicketCreateDto {
   solicitante: string;
 }
 
+export type TipoEventoValue = 'CambioEstado' | 'CambioPrioridad' | 'CambioAsignacion' | 'Comentario';
+
+export interface TicketEvento {
+  id: number;
+  tipo: TipoEventoValue;
+  colaboradorNombre: string | null;
+  valorAnterior: string | null;
+  valorNuevo: string | null;
+  texto: string | null;
+  creado: string;
+}
+
 export interface Opcion<T extends string> {
   value: T;
   label: string;

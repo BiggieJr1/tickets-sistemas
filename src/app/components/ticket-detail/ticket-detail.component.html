@@ -54,3 +54,51 @@
     <span>Prioridad: <b>{{ labelDe(prioridades, ticket().prioridad) }}</b></span>
   }
 </div>
+
+<div class="detail-historial">
+  <h4>Historial</h4>
+
+  @if (errorHistorial()) {
+    <div class="err" role="alert">{{ errorHistorial() }}</div>
+  }
+
+  @if (cargandoHistorial()) {
+    <p class="historial-vacio">Cargando historial...</p>
+  } @else if (historial().length === 0) {
+    <p class="historial-vacio">Sin actividad todavía.</p>
+  } @else {
+    <ul class="historial-lista">
+      @for (e of historial(); track e.id) {
+        <li [class.comentario]="e.tipo === 'Comentario'">
+          <span class="historial-fecha">{{ e.creado | date: 'short' }}</span>
+          @if (e.tipo === 'Comentario') {
+            <div class="comentario-cuerpo">
+              <b>{{ e.colaboradorNombre ?? 'Alguien' }}:</b>
+              <p>{{ e.texto }}</p>
+            </div>
+          } @else {
+            <span>{{ descripcionEvento(e) }}</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (esAdmin()) {
+    <div class="comentario-form">
+      <textarea
+        aria-label="Nuevo comentario"
+        placeholder="Agregar un comentario (ej. qué se hizo para resolverlo)..."
+        [ngModel]="comentario()"
+        (ngModelChange)="comentario.set($event)"
+      ></textarea>
+      <button
+        type="button"
+        [disabled]="enviandoComentario() || !comentario().trim()"
+        (click)="enviarComentario()"
+      >
+        {{ enviandoComentario() ? 'Enviando...' : 'Agregar comentario' }}
+      </button>
+    </div>
+  }
+</div>

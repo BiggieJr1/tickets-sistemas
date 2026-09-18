@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Colaborador } from '../../models/colaborador.model';
@@ -9,9 +9,12 @@ import {
   PRIORIDADES,
   PrioridadValue,
   Ticket,
+  TicketEvento,
   labelDe,
 } from '../../models/ticket.model';
 import { AuthService } from '../../services/auth.service';
+import { extraerMensajeError } from '../../services/api.util';
+import { TicketsService } from '../../services/tickets.service';
 
 @Component({
   selector: 'app-ticket-detail',
@@ -20,8 +23,13 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './ticket-detail.component.html',
   styleUrl: './ticket-detail.component.scss',
 })
-export class TicketDetailComponent {
+export class TicketDetailComponent implements OnInit {
   private auth = inject(AuthService);
+  // A diferencia de estado/prioridad/asignación/eliminar (que mutan la lista
+  // central de tickets y por eso se delegan al contenedor vía outputs), el
+  // historial es de solo lectura/anexo local a este detalle — no hay
+  // necesidad de hacerlo pasar por ticket-row/ticket-list.
+  private ticketsService = inject(TicketsService);
 
   // Cambiar estado/prioridad/asignación y eliminar son solo de
   // administradores (el backend también lo exige; esto evita el
@@ -69,6 +77,65 @@ export class TicketDetailComponent {
   readonly prioridades = PRIORIDADES;
   readonly estados = ESTADOS;
   readonly labelDe = labelDe;
+
+  readonly historial = signal<TicketEvento[]>([]);
+  readonly cargandoHistorial = signal(false);
+  readonly errorHistorial = signal<string | null>(null);
+
+  readonly comentario = signal('');
+  readonly enviandoComentario = signal(false);
+
+  ngOnInit(): void {
+    this.cargarHistorial();
+  }
+
+  private async cargarHistorial(): Promise<void> {
+    this.cargandoHistorial.set(true);
+    this.errorHistorial.set(null);
+    try {
+      const eventos = await this.ticketsService.obtenerHistorial(this.ticket().id);
+      this.historial.set(eventos);
+    } catch (e) {
+      this.errorHistorial.set(extraerMensajeError(e));
+    } finally {
+      this.cargandoHistorial.set(false);
+    }
+  }
+
+  async enviarComentario(): Promise<void> {
+    const texto = this.comentario().trim();
+    if (!texto) return;
+
+    this.enviandoComentario.set(true);
+    this.errorHistorial.set(null);
+    try {
+      const evento = await this.ticketsService.agregarComentario(this.ticket().id, texto);
+      this.historial.update((lista) => [...lista, evento]);
+      this.comentario.set('');
+    } catch (e) {
+      this.errorHistorial.set(extraerMensajeError(e));
+    } finally {
+      this.enviandoComentario.set(false);
+    }
+  }
+
+  // Texto legible de un evento automático (los comentarios se muestran
+  // aparte, con su propio bloque en la plantilla).
+  descripcionEvento(e: TicketEvento): string {
+    const quien = e.colaboradorNombre ?? 'Alguien';
+    switch (e.tipo) {
+      case 'CambioEstado':
+        return `${quien} cambió el estado de ${labelDe(this.estados, e.valorAnterior as EstadoValue)} a ${labelDe(this.estados, e.valorNuevo as EstadoValue)}`;
+      case 'CambioPrioridad':
+        return `${quien} cambió la prioridad de ${labelDe(this.prioridades, e.valorAnterior as PrioridadValue)} a ${labelDe(this.prioridades, e.valorNuevo as PrioridadValue)}`;
+      case 'CambioAsignacion':
+        return e.valorNuevo === 'Sin asignar'
+          ? `${quien} quitó la asignación (antes: ${e.valorAnterior})`
+          : `${quien} asignó el ticket a ${e.valorNuevo}`;
+      default:
+        return '';
+    }
+  }
 
   // El <select> nativo solo maneja strings; "" representa "sin asignar".
   onAsignacionChange(valor: string): void {
