@@ -442,6 +442,51 @@ Se extendió el mismo programa de consola aparte (`graph-mail-test`, mismo `User
 
 ### 12.4 Pendiente
 
-- Dar de alta a mano a las ~9 personas reales excluidas por el filtro de nombre (correos genéricos tipo `useradsaXX`, `freelanceXX`, `practicanteXX` — ver lista completa en la sesión, no repetida aquí).
+- ~~Dar de alta a mano a las ~9 personas reales excluidas por el filtro de nombre~~ Hecho, ver §13.1.
 - Los pendientes de §11.5 (notificar al asignar y al cambiar de estado) siguen abiertos.
 - Los pendientes de configuración de Railway (`AzureAd__TenantId`/`ClientId`, quitar `JWT_SECRET`/`SEED_ADMIN_PASSWORD`) de §9.6 siguen abiertos.
+
+---
+
+## 13. Sesión del 18 de septiembre — import real, pausa de despliegues por créditos, historial de tickets
+
+### 13.1 Corriendo el import de verdad en producción
+
+El botón de §12.2 se había commiteado pero nadie le había dado clic todavía. Al revisar `/colaboradores` en producción antes de dar de alta a los 9 excluidos, se encontró que **Netlify no había redesplegado desde el 14 de septiembre** (mismo `Etag` de la respuesta que aquel día, y el bundle servido no traía ni el botón de import ni el fix de asignación-solo-admins de §12.1) — confirmado con `curl` al JS servido (0 coincidencias del texto del botón). Causa: se agotaron los créditos de build de Netlify (ver §13.2).
+
+Como el backend en Railway sí seguía desplegándose solo (no depende de los créditos de Netlify), se corrió el import **directo contra la API real**, sin depender del frontend desplegado: se tomó el access token que MSAL ya tenía cacheado en `localStorage` de una sesión con el frontend viejo (ya logueado) y se llamó `POST /api/colaboradores/importar-entra` con `fetch` desde la consola del navegador — mismo patrón ya usado en §10.2 para confirmar los 403 sin pasar por la UI.
+
+Resultado: **127 colaboradores importados**. Se encontró un problema no anticipado en el filtro de nombre de §12.2: quedaron **~25 cuentas de servicio/compartidas que no empiezan con "admin"** y por lo tanto no las atrapó la exclusión (`qvadmin`, `sqladmin`, `soporte`, `soportecrm`, `soportepe`, `soporteps`, `cs.soporte`, `ventas`, `ventascomercial`, `contacto`, `comercial`, `crmadmin`, `divisionbi`, `gerencia.negocios`, `jlgarciacrm`, `noreply`, `postmaster`, `outsourcingcrm`, `paypal`, `pharmacylite`, `pharmacysoft`, `contacto.pharmacysoft`, `phexpress`, `prendasys`, `juarezpa`), más dos personas con **doble cuenta** (Helen Piña y Kiyoshi Shimizu, cada una con dos correos distintos en el directorio). Raúl decidió dejarlas para revisar con calma después en vez de ampliar más el filtro.
+
+Las ~9 personas reales excluidas por el filtro (§12.2) se dieron de alta a mano, una por una, con el formulario real de "+ Nuevo colaborador" en la UI (no por API directa, para probar el flujo normal): Michelle Betancourt, Giovanni Castro, Jesús Manuel Hernández, Rafael Quintero, Harvey Sandí, Antonio Medellín, Raul Lee, Armando Sanchez, Mario Cesar Franco Mozqueda — las 9 confirmadas en la tabla real. Total: ~137 colaboradores.
+
+### 13.2 Créditos de Netlify agotados — se pausan los redespliegues del frontend
+
+Confirmado por Raúl: se acabaron los créditos/minutos de build de Netlify. Mientras no se resuelva, el frontend se queda commiteado localmente pero **sin push**, y el trabajo se enfoca en construir y dejar listo el backlog (backend + frontend) para cuando se retome el despliegue — el backend en Railway no tiene esta restricción y puede seguir recibiendo pushes normalmente.
+
+### 13.3 Historial de tickets + comentarios de administradores
+
+Alcance decidido con Raúl antes de construir:
+- El historial incluye **tanto** una bitácora automática de cada cambio de estado/prioridad/asignación (antes solo se guardaba el último cambio en el propio `Ticket`) **como** comentarios manuales.
+- Los comentarios los escriben **solo administradores** (son quienes resuelven y dan seguimiento a los tickets).
+- Los puede **leer cualquier colaborador** logueado, no solo admins.
+- Es un **hilo** (varios comentarios a lo largo del tiempo, nunca se editan ni se borran), no una sola nota que se sobrescribe.
+
+**Backend (`D:\tickets-sistemas`, commit `d429808`):**
+- Modelo nuevo `TicketEvento` (`Models/TicketEvento.cs`) con `TipoEventoTicket` (`CambioEstado`, `CambioPrioridad`, `CambioAsignacion`, `Comentario`), `ValorAnterior`/`ValorNuevo` (texto ya formateado) para los automáticos, `Texto` para los comentarios. FK a `Ticket` (`Cascade`: si se borra el ticket, se borra su historial) y a `Colaborador` (`SetNull`, igual que `AsignadoA`/`ActualizadoPor`).
+- `TicketsController`: `UpdateEstado`, `UpdatePrioridad` y `UpdateAsignacion` ahora también insertan un `TicketEvento` (mismo `SaveChangesAsync`, una sola transacción con el update del ticket). Nuevo `GET /api/tickets/{id}/historial` (cualquier colaborador) y `POST /api/tickets/{id}/comentarios` (solo admins).
+- Migración `AgregarTicketEventos`.
+
+**Frontend (`Desktop\tickets-sistemas`, commit `039b230`):**
+- Sección "Historial" nueva en `ticket-detail`, debajo de las acciones de estado/prioridad/asignación: mezcla eventos automáticos (texto armado con `descripcionEvento()`, reusando `labelDe` de estados/prioridades) y comentarios (con nombre y fecha). El formulario de "Agregar comentario" solo se muestra si `esAdmin()`.
+- **Excepción deliberada al patrón de outputs:** a diferencia de estado/prioridad/asignación/eliminar (que se delegan al contenedor `ticket-list` vía `output()` porque mutan la lista central de tickets), `ticket-detail` inyecta `TicketsService` directo para el historial — es de solo lectura/anexo local a este detalle, no tiene sentido hacerlo pasar por `ticket-row`/`ticket-list` solo para mantener la convención.
+
+**Generar la migración volvió a toparse con el problema ya documentado en §9.2** (la máquina de desarrollo solo tiene .NET 10, `dotnet-ef` necesita el runtime 8.0): se resolvió igual, con Docker (`mcr.microsoft.com/dotnet/sdk:8.0`, cadena de conexión dummy). Nota para la próxima vez: en Git Bash, `docker run -v D:\...:/algo` y `-w /algo` truena porque MSYS reescribe las rutas que empiezan con `/` — hay que anteponer `MSYS_NO_PATHCONV=1` al comando completo.
+
+**No se pudo probar end-to-end en local esta vez** (intento en `http://localhost:4200` contra un backend y Postgres de prueba, sin tocar producción): además del problema ya conocido del runtime, apareció un **choque de puertos** — la máquina tiene una instalación nativa de Postgres escuchando en el puerto 5433 (el mismo que se eligió para una Postgres de prueba en Docker), y también un contenedor `tickets-sistemas-api` viejo (de hace 3 semanas, apuntando a SQLite) ya corriendo en el puerto 5080, dejado de una sesión anterior. Se abandonó el intento en vez de seguir depurando el entorno local, se limpiaron los contenedores de prueba creados en esta sesión (dejando intactos los que ya existían de antes) y se documenta aquí para la próxima vez: **antes de levantar servicios locales de prueba, revisar primero qué puertos/contenedores ya están ocupados** (`docker ps -a`, `Get-NetTCPConnection`).
+
+### 13.4 Pendiente
+
+- Validar el historial/comentarios con un flujo real una vez que se retome el despliegue de Netlify (commit ya listo, sin push).
+- Revisar y limpiar las ~25 cuentas de servicio y las 2 personas con doble cuenta encontradas en §13.1.
+- Los pendientes de §11.5 y §9.6 siguen abiertos.
