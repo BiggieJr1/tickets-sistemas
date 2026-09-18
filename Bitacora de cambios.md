@@ -407,4 +407,41 @@ Con eso, Hector pudo entrar. Ya estaba dado de alta como `Colaborador` admin act
 - Notificar al colaborador asignado cuando se le asigna un ticket (evento "asignación", ya priorizado por Raúl para después de esta fase).
 - Notificar al solicitante cuando cambia el estado del ticket — requiere agregar un campo de correo al alta (`TicketCreateDto.Solicitante` hoy es solo texto libre, sin correo).
 - Revisar si conviene mover el remitente de Graph de una cuenta de admin personal (`raul.galaviz@bisoft.com.mx`) a una cuenta de servicio dedicada (ej. `notificaciones@bisoft.com.mx`), evaluado y descartado por ahora para no complicar el alta.
+
+---
+
+## 12. Sesión del 14-18 de septiembre — asignación solo a admins e importar colaboradores desde Entra ID
+
+### 12.1 Restringir la asignación de tickets a solo colaboradores administradores
+
+Decisión de producto de Raúl: un ticket solo se puede asignar a un colaborador que sea administrador, no a cualquier colaborador activo como hasta ahora.
+
+- **Backend (`D:\tickets-sistemas`, commit `02088f9`):** `TicketsController.UpdateAsignacion` ahora exige `Activo && EsAdministrador` en vez de solo `Activo`. Mismo criterio de "reforzar en las dos capas" que el hueco de permisos de §10.2.
+- **Frontend (`Desktop\tickets-sistemas`, commit `cbd4c03`):** `ticket-list.component.ts` agrega el computed `colaboradoresAsignables` (filtra a `esAdministrador`) y se lo pasa a `ticket-detail` en vez de la lista completa de activos.
+- **Conflicto encontrado y corregido antes de commitear:** si un ticket ya estaba asignado a alguien que deja de calificar (le quitan el rol de admin, o se desactiva), el `<select>` nativo de Angular no encuentra ningún `<option>` que haga match con `ticket().asignadoAId` — antes de este fix, se mostraba visualmente "Sin asignar" aunque el ticket siguiera realmente asignado a esa persona (la línea de metadatos de arriba sí mostraba el nombre correcto), con riesgo de una desasignación accidental si alguien tocaba el selector sin fijarse. Fix en `ticket-detail.component.ts`: nuevo computed `opcionesAsignacion` que, si el `asignadoAId` actual no está en la lista filtrada, agrega una opción extra de solo referencia usando el nombre que ya trae el propio ticket (`asignadoANombre`), marcada "(ya no asignable)" en el texto de la opción. No hizo falta tocar la lista de colaboradores del contenedor para resolverlo.
+- Confirmado sin datos que migrar: no había ningún ticket asignado a un colaborador no-admin al momento del cambio.
+
+### 12.2 Importar colaboradores desde el directorio de Entra ID
+
+Pedido de Raúl: en vez de dar de alta a cada colaborador a mano uno por uno, poder traer de un jalón a todos los de la empresa (como no-admin) y de ahí solo prender el toggle de "Administrador" a quien corresponda, reusando la pantalla `/colaboradores` que ya existía.
+
+Se evaluaron dos caminos: alta masiva manual (pegar una lista de nombre/correo) vs. traer el directorio real de Microsoft Graph. Se eligió Graph porque ya estaba todo el engranaje montado desde las notificaciones por correo (§11): mismo App Registration, mismo `Graph:ClientSecret` — solo hizo falta agregarle el permiso de aplicación **`User.Read.All`** (con consentimiento de administrador, mismo trámite que `Mail.Send`).
+
+**Backend (`D:\tickets-sistemas`, commit `db01cfa`):**
+- `Services/IDirectoryService.cs` + `GraphDirectoryService.cs` (nuevo): `GET /users` de Graph con paginado (`@odata.nextLink`), filtrando a cuentas `accountEnabled` y `userType == "Member"` (sin invitados) con correo `@bisoft.com.mx`. A diferencia del envío de correo (que traga errores para no tumbar la creación de un ticket), aquí sí se lanza una excepción clara si falta config o Graph rechaza — es una acción que dispara un admin a propósito, no algo en segundo plano.
+- **Filtro de "parece una persona"**, agregado después de probar con datos reales: el directorio del tenant (520 cuentas) mezcla personas con cuentas de servicio/prueba (`Administrador`, `adminsp2010`, `admintf`, `breakglass-admin`, `svc-devops-nuget`, `testAD01`, `userGoWeb01`, etc.). Se agregó una regex (`^[a-záéíóúñü]+(\.[a-záéíóúñü]+)?$`, sin dígitos ni guiones) que solo acepta el patrón `nombre.apellido` o un nombre solo con una letra pegada (ej. `alejandrou` = Alejandro + inicial del apellido, convención real de la empresa), más una exclusión explícita de todo lo que empiece con "admin". Con el tenant real: de 155 cuentas que pasaban el filtro de dominio/habilitada/sin-invitado, 127 pasan también este filtro de nombre.
+  - **Trade-off conocido, aceptado por Raúl:** el filtro no distingue perfectamente "cuenta de servicio" de "persona real con correo genérico" — excluyó también a ~9 personas reales cuyo correo no sigue el patrón porque se les asignó genérico (ej. `Michelle Betancourt <useradsa02@...>`, freelancers como `Raul Lee <freelance02@...>`, practicantes como `<practicante02@...>`). Se decidió no complicar el filtro más: esas ~9 personas se dan de alta a mano con "+ Nuevo colaborador" después de correr el import.
+- `ColaboradoresController`: nuevo `POST /api/colaboradores/importar-entra` (solo admins) — da de alta como `EsAdministrador = false, Activo = true` a quien no exista ya por correo; no toca a quien ya está dado de alta (no pisa rol ni estado de nadie). Responde `{ total, importados, yaExistian }`.
+
+**Frontend (`Desktop\tickets-sistemas`, commit `9c37b35`):**
+- Botón **"Importar desde Microsoft 365"** en `/colaboradores` (junto a "+ Nuevo colaborador"), que llama al endpoint y muestra el resultado en un banner ("Se importaron X colaboradores nuevos (Y ya existían, Z en el directorio)"). Nueva clase `.ok-banner` en el SCSS (reusa `--accent`/`--accent-dim`, ya definidos en `tickets-theme.scss`, en vez de inventar un color nuevo).
+
+### 12.3 Prueba aislada antes de tocar la base real (mismo patrón de §11.2)
+
+Se extendió el mismo programa de consola aparte (`graph-mail-test`, mismo `UserSecretsId`) para probar `GET /users` en vez de `sendMail`, confirmando que `User.Read.All` ya estaba consentido antes de darle clic al botón real: `520` cuentas totales en el tenant, `155` pasan el filtro de dominio/habilitada/sin-invitado, `127` pasan también el filtro de nombre — los mismos números con los que se armó la discusión del trade-off de §12.2.
+
+### 12.4 Pendiente
+
+- Dar de alta a mano a las ~9 personas reales excluidas por el filtro de nombre (correos genéricos tipo `useradsaXX`, `freelanceXX`, `practicanteXX` — ver lista completa en la sesión, no repetida aquí).
+- Los pendientes de §11.5 (notificar al asignar y al cambiar de estado) siguen abiertos.
 - Los pendientes de configuración de Railway (`AzureAd__TenantId`/`ClientId`, quitar `JWT_SECRET`/`SEED_ADMIN_PASSWORD`) de §9.6 siguen abiertos.
