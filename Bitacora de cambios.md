@@ -490,3 +490,43 @@ Alcance decidido con Raúl antes de construir:
 - Validar el historial/comentarios con un flujo real una vez que se retome el despliegue de Netlify (commit ya listo, sin push).
 - Revisar y limpiar las ~25 cuentas de servicio y las 2 personas con doble cuenta encontradas en §13.1.
 - Los pendientes de §11.5 y §9.6 siguen abiertos.
+
+---
+
+## 14. Sesión del 21 de septiembre — commit de la campanita vieja, y plan de migración a servidor propio
+
+### 14.1 Commit de respaldo de la campanita de notificaciones
+
+Antes de un "cambio importante", se aprovechó para commitear lo único que seguía sin subir de sesiones anteriores a esta bitácora: la campanita de notificaciones de §8 en adelante (`app-notificaciones-admin` en el header, polling cada 30s a `TicketsService.cargar()`). **Frontend, commit `c1bc08e`.** Quedaron sin tocar (a propósito, son ajenos al código) `.obsidian/` y los PPTX sueltos en la raíz del repo.
+
+### 14.2 Decisión: mover la app a un servidor propio, solo red local
+
+Motivo: se agotaron los créditos de Netlify (§13.2) y surgió la pregunta de sacar el proyecto de Netlify/Railway/Supabase por completo. Se recordó que **este proyecto originalmente vivía en un servidor Ubuntu interno** (`docker-compose.yml` + `nginx-tickets.conf.example`, documentados en `README.md`/`DEPLOY-NUBE.md`) antes de moverse a la nube — esos archivos seguían en el repo pero desactualizados (de cuando el frontend era HTML plano sin login, antes de Angular y Entra ID).
+
+Decisiones tomadas con Raúl:
+- **Acceso solo red local/oficina** (no remoto) — más simple, no hay que exponer nada a internet.
+- **La base de datos también se mueve** del servidor propio en vez de quedarse en Supabase — con acceso solo-LAN, tener la base también local deja **cero superficie expuesta a internet** (ni app ni base), más seguro que Supabase para este caso (no porque Supabase sea insegura, sino porque nada expuesto siempre gana a algo expuesto y protegido).
+
+**El problema de Entra ID identificado:** Entra ID exige que el redirect URI de una SPA sea `https://` (excepto `http://localhost`) — el `nginx-tickets.conf.example` viejo servía por HTTP plano, con eso el login de Microsoft no funcionaría. Solución elegida: certificado real de Let's Encrypt por **validación DNS** (no HTTP) para `tickets.bisoft.com.mx`, aprovechando que Bisoft controla ese dominio — no requiere que el servidor sea alcanzable desde internet (solo crear un TXT temporal), y evita distribuir un certificado self-signed/CA propia a cada máquina de oficina. Dentro de la oficina, ese nombre se resuelve a la IP interna por DNS interno o `hosts`.
+
+Lo que **no cambia**: los permisos de Microsoft Graph (`Mail.Send`, `User.Read.All`) son del App Registration, no del servidor — funcionan igual con el mismo `Graph:ClientSecret`, sin tocar nada en Azure salvo agregar el nuevo redirect URI.
+
+### 14.3 Cambios de código dejados listos
+
+**Backend (`D:\tickets-sistemas`, commit `03fe24c`):**
+- `docker-compose.yml`: nuevo servicio `tickets-db` (Postgres 16 con volumen persistente) en vez de apuntar a Supabase; `tickets-api` ahora usa `Host=tickets-db;...` como cadena de conexión. Credenciales por `.env` (ya en `.gitignore`).
+- `nginx-tickets.conf.example`: actualizado al build real de Angular (`dist/tickets-sistemas/browser`, no el viejo `frontend/index.html`) + bloque HTTPS con redirect 80→443.
+- `MIGRAR-SERVIDOR-LOCAL.md` (nuevo): guía paso a paso completa — requisitos del servidor, `pg_dump`/`pg_restore` desde Supabase (usando la conexión directa puerto `5432`, no el "Transaction pooler" de `6543`, porque `pg_dump` no funciona bien a través de un pooler de transacciones), certbot por DNS, nginx, el redirect URI nuevo en Azure, y cómo resolver el dominio dentro de la oficina.
+
+**Frontend (`Desktop\tickets-sistemas`, commit `9709ced`):**
+- `api.util.ts`: `API_ROOT` pasó de "`/api` en dev, URL absoluta de Railway en prod" a **siempre `/api`** — con nginx sirviendo frontend y backend en el mismo origen, ya no hace falta CORS ni una URL hardcodeada.
+- **Aviso dejado para el futuro:** con este cambio, el build de Angular **ya no sirve tal cual** para el esquema anterior de Netlify+Railway (ese necesitaba la URL absoluta + `ALLOWED_ORIGINS`). Fue intencional porque el plan es ir derecho a self-hosting; si más adelante hace falta tener las dos formas de desplegar en paralelo, se resuelve con un archivo de configuración por ambiente en vez de un valor fijo.
+
+### 14.4 Pendiente (fuera del alcance de este asistente — servidor físico, DNS, Azure)
+
+- Preparar el servidor Ubuntu (Docker, nginx, certbot).
+- Migrar los datos reales de Supabase con `pg_dump`/`pg_restore` (pasos en `MIGRAR-SERVIDOR-LOCAL.md`).
+- Sacar el certificado de `tickets.bisoft.com.mx` por validación DNS.
+- Agregar `https://tickets.bisoft.com.mx` como redirect URI en el App Registration `tickets-sistemas-frontend` (Azure Portal).
+- Resolver `tickets.bisoft.com.mx` dentro de la red de oficina (DNS interno o `hosts`).
+- Probar el flujo completo ya en el servidor nuevo.
