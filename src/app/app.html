@@ -4,6 +4,7 @@
     <span class="spacer"></span>
     @if (auth.isAdmin()) {
       <a routerLink="/colaboradores">Colaboradores</a>
+      <app-notificaciones-admin />
     }
     <span class="usuario">{{ usuario.nombreCompleto }}</span>
     <button type="button" class="btn-salir" (click)="salir()">Salir</button>

@@ -1,0 +1,32 @@
+<div class="notificaciones">
+  <button
+    type="button"
+    class="btn-campana"
+    [class.tiene-nuevos]="ticketsService.nuevos().length > 0"
+    (click)="toggle()"
+  >
+    🔔
+    @if (ticketsService.nuevos().length > 0) {
+      <span class="badge">{{ ticketsService.nuevos().length }}</span>
+    }
+  </button>
+
+  @if (abierto()) {
+    <div class="dropdown">
+      @if (ticketsService.nuevos().length === 0) {
+        <p class="vacio">No hay tickets nuevos.</p>
+      } @else {
+        <ul>
+          @for (t of ticketsService.nuevos(); track t.id) {
+            <li>
+              <span class="codigo">{{ t.codigoTicket }}</span>
+              <span class="titulo">{{ t.titulo }}</span>
+              <span class="solicitante">De: {{ t.solicitante }}</span>
+            </li>
+          }
+        </ul>
+        <button type="button" class="btn-marcar" (click)="irATickets()">Ver tickets</button>
+      }
+    </div>
+  }
+</div>
