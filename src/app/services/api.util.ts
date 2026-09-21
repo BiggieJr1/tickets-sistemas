@@ -1,12 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { isDevMode } from '@angular/core';
 
-// En desarrollo (`ng serve`) se usa la ruta relativa `/api`, que
-// proxy.conf.json redirige a http://localhost:5080 (la API corriendo local).
-// En producción (build para Netlify) apunta directo a la API pública en Railway.
-export const API_ROOT = isDevMode()
-  ? '/api'
-  : 'https://tickets-sistemas-backend-production.up.railway.app/api';
+// Ruta relativa siempre: en desarrollo (`ng serve`) proxy.conf.json la
+// redirige a http://localhost:5080; en el servidor propio, nginx sirve el
+// build de Angular y hace proxy de /api/* al contenedor del backend en el
+// mismo origen — no hace falta CORS ni una URL absoluta hardcodeada.
+export const API_ROOT = '/api';
 
 // Extrae un mensaje legible de un error HTTP: prioriza lo que mande el
 // backend (string plano o { message }) antes que el texto genérico que
