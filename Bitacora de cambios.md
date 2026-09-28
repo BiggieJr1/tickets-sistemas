@@ -409,7 +409,7 @@ Con eso, Hector pudo entrar. Ya estaba dado de alta como `Colaborador` admin act
 
 ### 11.5 Pendiente
 
-- Notificar al colaborador asignado cuando se le asigna un ticket (evento "asignación", ya priorizado por Raúl para después de esta fase).
+- ~~Notificar al colaborador asignado cuando se le asigna un ticket (evento "asignación", ya priorizado por Raúl para después de esta fase).~~ Hecho (§16).
 - Notificar al solicitante cuando cambia el estado del ticket — requiere agregar un campo de correo al alta (`TicketCreateDto.Solicitante` hoy es solo texto libre, sin correo).
 - Revisar si conviene mover el remitente de Graph de una cuenta de admin personal (`raul.galaviz@bisoft.com.mx`) a una cuenta de servicio dedicada (ej. `notificaciones@bisoft.com.mx`), evaluado y descartado por ahora para no complicar el alta.
 
@@ -671,3 +671,40 @@ Pedido por Raúl para frenar el doble clic y los envíos repetidos. Decisiones: 
 **Cierre:** `ng serve` apagado de verdad (se terminó el proceso `node` que seguía escuchando en el 4200) y pestaña de Chrome cerrada. En la base local quedan los tickets de prueba **SIS-0001** y **SIS-0002**, que se pueden borrar desde la app.
 
 **Sigue pendiente:** probar el cooldown (429) con una cuenta no-admin.
+
+---
+
+## 16. Sesión del 28 de septiembre — aviso por correo al asignar un ticket
+
+Pendiente de §11.5, priorizado por Raúl como el siguiente paso de las notificaciones. **Backend, commit `5090b57`.**
+
+### 16.1 Cambios
+
+- **`IEmailNotificationService` / `GraphEmailNotificationService`:** nuevo `NotificarTicketAsignadoAsync(ticket, asignado, asignadoPor)`. Reusa el mismo `EnviarAsync` que el correo de ticket nuevo (§11), así que hereda su comportamiento: si falta configuración o Graph falla, solo se registra en el log y la operación sigue.
+  - Asunto: `[SIS-XXXX] Se te asignó: <título>`.
+  - Cuerpo: código, título, categoría, prioridad, estado, solicitante, quién lo asignó y descripción.
+  - Prioridad y estado salen con el mismo texto que la app (`Crítica`, `Sin asignar`, `En progreso`), no con el nombre del enum. Es el mismo problema que se corrigió en el frontend en §15.9.
+- **`TicketsController.UpdateAsignacion`:** el correo se manda **después** del `SaveChangesAsync` y solo si:
+  - el ticket quedó asignado a alguien (desasignar no avisa),
+  - cambió la persona (volver a elegir a la misma no avisa),
+  - la persona asignada no es quien hace el cambio (quien se toma un ticket ya sabe que lo tiene).
+
+**Sin enlace al ticket en el correo:** la app no tiene ruta de detalle por ticket ni URL pública configurada. Se puede agregar cuando `tickets.bisoft.com.mx` exista (§14.4).
+
+### 16.2 Verificación
+
+- Compila, el contenedor quedó *healthy*, `/health` responde 200 y el `PATCH` de asignación sin token sigue dando 401.
+- **Prueba real (con aviso previo a Héctor):** desde `ng serve` se asignó **SIS-0002** a Héctor (Id 3). Graph respondió **`202 Accepted`** a `sendMail`.
+- **Casos sin correo:** en **SIS-0001** se desasignó y después Raúl se lo volvió a asignar a sí mismo. Se registraron los dos eventos en el historial y no hubo ninguna llamada a `sendMail`. En los tres cambios salió un solo correo.
+
+> [!note]
+> Héctor e Iván siguen apareciendo como "Administrador" en el selector hasta su primer login (§15.9), así que para esta prueba se identificó a Héctor por su Id en la base.
+
+**Cierre:** `ng serve` apagado y pestaña de Chrome cerrada. SIS-0002 queda asignado a Héctor en la base local.
+
+### 16.3 Pendiente
+
+- Confirmar con Héctor que le llegó el correo y que se ve bien (no cayó en spam, acentos correctos).
+- Notificar al solicitante cuando cambia el estado del ticket (§11.5). Requiere agregar un campo de correo al alta.
+- Agregar un enlace al ticket en los correos cuando exista la URL definitiva.
+- Probar el cooldown (429) con una cuenta no-admin (§15.10).
