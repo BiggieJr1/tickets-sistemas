@@ -28,7 +28,7 @@ El proyecto son **dos repos separados**:
 12. [[#12. Sesión del 14-18 de septiembre — asignación solo a admins e importar colaboradores desde Entra ID|Asignación solo a admins e import desde Entra ID]]
 13. [[#13. Sesión del 18 de septiembre — import real, pausa de despliegues por créditos, historial de tickets|Import real, pausa de Netlify e historial de tickets]]
 14. [[#14. Sesión del 21 de septiembre — commit de la campanita vieja, y plan de migración a servidor propio|Campanita y plan de migración a servidor propio]]
-15. [[#15. Sesión del 28 de septiembre — completar la dockerización del backend|Dockerización del backend, baja de Railway/Netlify y stack local]]
+15. [[#15. Sesión del 28 de septiembre — completar la dockerización del backend|Dockerización del backend, baja de Railway/Netlify, stack local y prueba E2E]]
 
 ---
 
@@ -608,3 +608,28 @@ De paso se quitó `ENV ASPNETCORE_URLS` del Dockerfile: la imagen `aspnet:8.0` y
 
 - Decidir qué hacer con el volumen viejo `tickets-sistemas_tickets-data` (SQLite de agosto): revisarlo a mano y borrarlo si no tiene nada útil.
 - En el servidor, poner `SEED_ADMIN_EMAIL` con los admins separados por comas y dejar `DB_HOST_PORT` vacío.
+
+### 15.9 Prueba de punta a punta en local y tres correcciones
+
+Se probó el flujo completo con Chrome → `ng serve` (`localhost:4200`) → proxy → API en Docker → Postgres: el login con Microsoft entró solo por SSO, y se creó un ticket de prueba (**SIS-0001**, en la base local), se le cambiaron estado, prioridad y asignación y se comentó. Todo quedó guardado en Postgres (ticket + 4 eventos en `TicketEventos`).
+
+**Hallazgos:**
+
+1. **Secreto de Graph inválido** (`AADSTS7000215: Invalid client secret`), así que no se mandó ningún correo. Casi seguro se copió el *Secret ID* en vez del *Value*. **Pendiente de Raúl:** corregir `GRAPH_CLIENT_SECRET` en el `.env` (o generar uno nuevo y borrar el anterior) y correr `docker compose up -d`.
+2. **El historial no se actualizaba** al cambiar estado, prioridad o asignación. El backend sí registraba el evento, pero el detalle solo cargaba el historial al abrirse y solo agregaba en vivo los comentarios. → Corregido.
+3. **Los admins sembrados se llamaban todos "Administrador"**, así que en el selector de asignación no se sabía quién era quién. → Corregido.
+4. **La etiqueta de estado mostraba el valor del enum** (`EnProgreso`) en vez del texto (`En progreso`). → Corregido.
+5. **La primera carga en `/` se quedó en blanco**, con el error de MSAL `block_iframe_reload`. Entrando por `/login` funcionó y no se repitió. Queda anotado por si vuelve a pasar.
+
+**Correcciones:**
+
+- **Frontend (`ticket-detail.component.ts`):** el historial se recarga cuando cambia `actualizado` del ticket, que es lo que trae la respuesta del servidor tras cada `PATCH`. Un `computed` intermedio hace que solo cuente un cambio de valor, para que el polling de la campanita (cada 30 s) no dispare recargas sin cambios. Se quitó `ngOnInit`, porque el `effect` también corre al crearse el componente.
+- **Frontend (`ticket-row`):** la etiqueta de estado usa `labelDe(estados, …)`, igual que la de prioridad.
+- **Backend (`Program.cs`, commit `efafb49`):** el seed guarda el correo como nombre provisional. En `OnTokenValidated`, si el nombre del colaborador sigue siendo su correo o "Administrador", se reemplaza por el claim `name` del token de Microsoft. Un nombre editado a mano no se toca.
+
+**Verificado en Chrome:** al cambiar el estado a Resuelto, la línea del historial apareció al instante. En el login, Raúl pasó de "Administrador" a **Raúl Galaviz** (encabezado, selector e historial), y la etiqueta muestra "En progreso" / "Resuelto".
+
+> [!note]
+> Héctor e Iván siguen como "Administrador" hasta su primer login (o se renombran a mano en Colaboradores). Las líneas viejas del historial conservan el nombre que la persona tenía en ese momento, como corresponde a un historial.
+
+**No probado:** eliminar ticket, campanita, página Colaboradores y acceso con una cuenta no-admin.
