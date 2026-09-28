@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Colaborador } from '../../models/colaborador.model';
 import {
   CATEGORIA_CODIGO,
+  ESTADOS,
   EstadoValue,
   PRIORIDADES,
   PrioridadValue,
@@ -36,6 +37,7 @@ export class TicketRowComponent {
   readonly categoriaCodigo = CATEGORIA_CODIGO;
   readonly labelDe = labelDe;
   readonly prioridades = PRIORIDADES;
+  readonly estados = ESTADOS;
 
   claseBordePrioridad(): string {
     return 'p-' + this.ticket().prioridad.toLowerCase();

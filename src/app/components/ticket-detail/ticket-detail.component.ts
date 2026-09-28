@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Colaborador } from '../../models/colaborador.model';
@@ -23,7 +23,7 @@ import { TicketsService } from '../../services/tickets.service';
   templateUrl: './ticket-detail.component.html',
   styleUrl: './ticket-detail.component.scss',
 })
-export class TicketDetailComponent implements OnInit {
+export class TicketDetailComponent {
   private auth = inject(AuthService);
   // A diferencia de estado/prioridad/asignación/eliminar (que mutan la lista
   // central de tickets y por eso se delegan al contenedor vía outputs), el
@@ -85,8 +85,19 @@ export class TicketDetailComponent implements OnInit {
   readonly comentario = signal('');
   readonly enviandoComentario = signal(false);
 
-  ngOnInit(): void {
-    this.cargarHistorial();
+  // Cambiar estado/prioridad/asignación pasa por el contenedor, que
+  // reemplaza el ticket con la respuesta del servidor (con `actualizado`
+  // nuevo) — el backend registra ese cambio como evento, así que al cambiar
+  // `actualizado` se vuelve a pedir el historial. El computed intermedio
+  // hace que solo cuente un cambio de valor, no un objeto ticket nuevo con
+  // los mismos datos (como el que trae el polling de la campanita).
+  private readonly actualizado = computed(() => this.ticket().actualizado);
+
+  constructor() {
+    effect(() => {
+      this.actualizado();
+      untracked(() => this.cargarHistorial());
+    });
   }
 
   private async cargarHistorial(): Promise<void> {
