@@ -1,6 +1,6 @@
 ---
 tags: [tickets-sistemas, bitacora, cambios]
-actualizado: 2026-09-10
+actualizado: 2026-09-28
 ---
 
 # Bitácora de cambios — Tickets Sistemas
@@ -24,6 +24,11 @@ El proyecto son **dos repos separados**:
 8. [[#8. Sesión del 8 de septiembre (noche) — colaboradores, login y asignación de tickets|Colaboradores, login y asignación de tickets]]
 9. [[#9. Sesión del 9 de septiembre — login con Microsoft Entra ID|Login con Microsoft Entra ID]]
 10. [[#10. Sesión del 10 de septiembre — pruebas del login con Microsoft y hueco de permisos|Pruebas del login con Microsoft y hueco de permisos]]
+11. [[#11. Sesión del 14 de septiembre — notificaciones por correo (fase 1) y acceso bloqueado en Netlify|Notificaciones por correo y acceso bloqueado en Netlify]]
+12. [[#12. Sesión del 14-18 de septiembre — asignación solo a admins e importar colaboradores desde Entra ID|Asignación solo a admins e import desde Entra ID]]
+13. [[#13. Sesión del 18 de septiembre — import real, pausa de despliegues por créditos, historial de tickets|Import real, pausa de Netlify e historial de tickets]]
+14. [[#14. Sesión del 21 de septiembre — commit de la campanita vieja, y plan de migración a servidor propio|Campanita y plan de migración a servidor propio]]
+15. [[#15. Sesión del 28 de septiembre — completar la dockerización del backend|Completar la dockerización del backend]]
 
 ---
 
@@ -530,3 +535,35 @@ Lo que **no cambia**: los permisos de Microsoft Graph (`Mail.Send`, `User.Read.A
 - Agregar `https://tickets.bisoft.com.mx` como redirect URI en el App Registration `tickets-sistemas-frontend` (Azure Portal).
 - Resolver `tickets.bisoft.com.mx` dentro de la red de oficina (DNS interno o `hosts`).
 - Probar el flujo completo ya en el servidor nuevo.
+
+---
+
+## 15. Sesión del 28 de septiembre — completar la dockerización del backend
+
+El `Dockerfile` y el `docker-compose.yml` ya existían (§2 y §14.3), pero les faltaban piezas para levantar de forma confiable en el servidor propio. **Backend (`D:\tickets-sistemas`), commit `44a3c8b`.**
+
+### 15.1 Cambios
+
+- **`TicketsSistemas.Api/.dockerignore` (nuevo):** excluye `bin/`, `obj/`, `.vs/` y `.env*`. Era el problema más serio: `COPY . .` metía el `obj/project.assets.json` generado en Windows (con rutas `C:\Users\...`), que pisaba el `dotnet restore` hecho dentro del contenedor y podía romper el `dotnet publish`.
+- **`Dockerfile`:**
+  - La API corre con el usuario sin privilegios que trae la imagen oficial de .NET 8 (`USER $APP_UID`), no como root.
+  - `HEALTHCHECK` contra `GET /health`. La imagen `aspnet` no trae `curl` ni `wget`, así que se hace con bash abriendo `/dev/tcp`.
+  - `dotnet publish --no-restore` para aprovechar la capa del restore en caché.
+- **`docker-compose.yml`:**
+  - Healthcheck de Postgres (`pg_isready`) y `depends_on: condition: service_healthy` en la API. Antes la API podía arrancar antes de que la base aceptara conexiones y `db.Database.Migrate()` tronaba en el arranque (mismo tipo de crash de §6.4, pero por otra causa).
+  - `DB_PASSWORD` ahora es obligatoria (`${DB_PASSWORD:?...}`): si falta en el `.env`, el compose se detiene con un mensaje claro en vez de levantar Postgres sin contraseña.
+- **`.env.example` (nuevo):** plantilla con las cuatro variables (`DB_PASSWORD`, `SEED_ADMIN_EMAIL`, `GRAPH_CLIENT_SECRET`, `GRAPH_SENDER_UPN`), todas vacías, con comentarios de dónde sale cada una. Se agregó `!.env.example` al `.gitignore` porque la regla `.env.*` también la ignoraba.
+- **`MIGRAR-SERVIDOR-LOCAL.md`:** el paso 2.2 ahora usa `cp .env.example .env` y `docker compose up -d --wait tickets-db` (espera a que Postgres esté *healthy* antes de restaurar el dump).
+
+> [!warning] Secretos
+> Ni el `.env.example` ni esta bitácora llevan valores reales. El secreto de Graph se toma de la variable ya configurada en Railway o del App Registration en Azure, y debe resguardarse en un gestor de secretos. Con el cambio de servidor es buen momento para **rotarlo**.
+
+### 15.2 Verificación
+
+- `docker compose config` valida el archivo sin errores.
+- **No se probó el build de la imagen**: Docker Desktop no estaba corriendo en la máquina de desarrollo.
+
+### 15.3 Pendiente
+
+- Correr `docker compose build tickets-api` con Docker Desktop encendido para confirmar que la imagen compila.
+- Lo de §14.4 sigue igual (servidor, datos, certificado, DNS, Azure).
