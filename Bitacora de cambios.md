@@ -633,3 +633,21 @@ Se probó el flujo completo con Chrome → `ng serve` (`localhost:4200`) → pro
 > Héctor e Iván siguen como "Administrador" hasta su primer login (o se renombran a mano en Colaboradores). Las líneas viejas del historial conservan el nombre que la persona tenía en ese momento, como corresponde a un historial.
 
 **No probado:** eliminar ticket, campanita, página Colaboradores y acceso con una cuenta no-admin.
+
+### 15.10 Cooldown de 1 minuto entre tickets
+
+Pedido por Raúl para frenar el doble clic y los envíos repetidos. Decisiones: **1 minuto** entre tickets de una misma persona, **administradores exentos** (soporte a veces levanta varios seguidos en nombre de otras personas). **Backend, commit `34d0bb2`** (`TicketsController.Create`):
+
+- Se identifica a la persona por el claim `ColaboradorId` que ya agrega `OnTokenValidated`, así que el límite es por cuenta de Microsoft, no por IP.
+- **Solo cuenta un ticket que sí se guardó.** `[ApiController]` rechaza con 400 un formulario inválido antes de entrar al método, y si falla el `SaveChanges` se libera el turno. Por eso no se usó el rate limiter integrado de ASP.NET Core, que cuenta cualquier petición.
+- El turno se aparta dentro de un `lock` **antes** de crear el ticket, para que dos clics casi simultáneos no creen dos.
+- Si llega antes de tiempo: **429** con header `Retry-After` y `{ message: "Espera N segundos antes de levantar otro ticket." }`. El modal ya muestra el `message` del backend (`extraerMensajeError`), así que el **frontend no cambió**.
+- El estado vive **en memoria**: hay una sola instancia de la API, y si se reinicia no importa perder el cooldown.
+
+**Verificado:** compila, el contenedor queda *healthy*, `/health` responde 200 y un `POST` sin token sigue dando 401. **No verificado el 429:** en la base local los tres colaboradores son admins (exentos). Para probarlo: dar de alta en Colaboradores una cuenta no-admin, entrar con ella y levantar dos tickets seguidos.
+
+### 15.11 Estado al cierre de la sesión
+
+- `ng serve` apagado y pestaña de Chrome cerrada. El stack de Docker (API + Postgres) sigue corriendo.
+- El ticket de prueba **SIS-0001** sigue en la base local: el modo automático bloqueó el `TRUNCATE`. Se puede borrar desde la app con el botón Eliminar.
+- **Pendiente de Raúl:** corregir `GRAPH_CLIENT_SECRET` (usar el *Value* del secreto) y correr `docker compose up -d`; probar el cooldown con una cuenta no-admin.
