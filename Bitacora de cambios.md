@@ -28,7 +28,7 @@ El proyecto son **dos repos separados**:
 12. [[#12. Sesión del 14-18 de septiembre — asignación solo a admins e importar colaboradores desde Entra ID|Asignación solo a admins e import desde Entra ID]]
 13. [[#13. Sesión del 18 de septiembre — import real, pausa de despliegues por créditos, historial de tickets|Import real, pausa de Netlify e historial de tickets]]
 14. [[#14. Sesión del 21 de septiembre — commit de la campanita vieja, y plan de migración a servidor propio|Campanita y plan de migración a servidor propio]]
-15. [[#15. Sesión del 28 de septiembre — completar la dockerización del backend|Dockerización del backend y baja de Railway/Netlify]]
+15. [[#15. Sesión del 28 de septiembre — completar la dockerización del backend|Dockerización del backend, baja de Railway/Netlify y stack local]]
 
 ---
 
@@ -561,11 +561,11 @@ El `Dockerfile` y el `docker-compose.yml` ya existían (§2 y §14.3), pero les 
 ### 15.2 Verificación
 
 - `docker compose config` valida el archivo sin errores.
-- **No se probó el build de la imagen**: Docker Desktop no estaba corriendo en la máquina de desarrollo.
+- ~~No se probó el build de la imagen~~ → probado más tarde ese mismo día, ver §15.7.
 
 ### 15.3 Pendiente
 
-- Correr `docker compose build tickets-api` con Docker Desktop encendido para confirmar que la imagen compila.
+- ~~Correr `docker compose build tickets-api` con Docker Desktop encendido para confirmar que la imagen compila.~~ Hecho (§15.7).
 - Lo de §14.4 sigue igual (servidor, datos, certificado, DNS, Azure).
 
 ### 15.4 Duda aclarada: el login ya es por OAuth
@@ -588,3 +588,23 @@ Raúl dio de baja ambos servicios. Consecuencias:
 - Quitar el redirect URI de Netlify en Azure (`tickets-sistemas-frontend` → Authentication).
 - Conseguir o regenerar el secreto de Graph para el `.env` del servidor.
 - Dar de baja Supabase **solo después** de restaurar el dump en el servidor propio.
+
+### 15.7 Build probado y stack nuevo corriendo en la máquina de desarrollo
+
+**Prueba aislada:** con Docker Desktop encendido se construyó la imagen y se levantó el compose completo en un proyecto aparte (`tickets-prueba`, otros nombres y puertos, contraseña aleatoria desechable). Resultados: los dos contenedores quedaron *healthy*, la API esperó a Postgres antes de arrancar, `/health` respondió 200, `/api/tickets` sin token respondió 401, el proceso corre como `uid=1654(app)`, se aplicaron las 5 migraciones en una base vacía y el seed creó el admin. Sin `DB_PASSWORD`, el compose se detiene con su mensaje. Al terminar se borró todo lo de la prueba.
+
+**Contenedor viejo encontrado:** en Docker Desktop seguía un `tickets-sistemas-api` del 26 de agosto, de antes del login, con SQLite en el volumen `tickets-sistemas_tickets-data`. Tenía `restart: unless-stopped`, así que se encendía solo al abrir Docker, y respondía `/api/tickets` **sin autenticación** en `127.0.0.1:5080`. No se pudo revisar el contenido del SQLite (el modo automático bloqueó la lectura), así que **el volumen se dejó intacto**. Los datos de la versión nueva no son compatibles (Postgres, esquema distinto) y los datos reales están en Supabase.
+
+**Reemplazo:** con el `.env` de Raúl (creado desde `.env.example`; el Bloc de notas lo guardaba como `.env.txt` o sin cambios, y se resolvió guardándolo con VS Code) se corrió `docker compose up -d --build`, que recreó `tickets-sistemas-api` con la imagen nueva y agregó `tickets-sistemas-db`. En el camino salieron dos problemas:
+
+- **Puerto 5432 ocupado:** la máquina tiene **dos PostgreSQL instalados en Windows** (en el 5432 y en el 5433). No se tocaron. Se agregó `DB_HOST_PORT` al compose (`127.0.0.1:${DB_HOST_PORT:-5432}:5432`); en esta máquina el `.env` usa `15432`, y en el servidor se deja vacío.
+- **`SEED_ADMIN_EMAIL` con tres correos separados por comas:** el seed solo aceptaba uno, así que creó un único colaborador con el texto completo como correo, con el que nadie podía entrar. `Program.cs` ahora divide la lista por comas (mismo patrón que `ALLOWED_ORIGINS`). Se borró el registro mal formado (la base estaba recién creada y sin tickets) y quedaron los tres admins por separado.
+
+De paso se quitó `ENV ASPNETCORE_URLS` del Dockerfile: la imagen `aspnet:8.0` ya escucha en el 8080 y la variable solo generaba un warning. Los dos warnings que quedan (DataProtection) no afectan, porque la API no usa cookies, solo Bearer tokens.
+
+**Backend, commit `51893c1`.** Estado final: `tickets-sistemas-api` en `127.0.0.1:5080` y `tickets-sistemas-db` en `127.0.0.1:15432`, los dos *healthy*, con la base local vacía. Sirve para desarrollar con `ng serve` (`localhost:4200` ya es redirect URI en Azure).
+
+### 15.8 Pendiente
+
+- Decidir qué hacer con el volumen viejo `tickets-sistemas_tickets-data` (SQLite de agosto): revisarlo a mano y borrarlo si no tiene nada útil.
+- En el servidor, poner `SEED_ADMIN_EMAIL` con los admins separados por comas y dejar `DB_HOST_PORT` vacío.
