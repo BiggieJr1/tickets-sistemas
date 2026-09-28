@@ -648,6 +648,26 @@ Pedido por Raúl para frenar el doble clic y los envíos repetidos. Decisiones: 
 
 ### 15.11 Estado al cierre de la sesión
 
-- `ng serve` apagado y pestaña de Chrome cerrada. El stack de Docker (API + Postgres) sigue corriendo.
+- ~~`ng serve` apagado~~ **Corrección:** no se había apagado. Detener la tarea terminó `npx`, pero el proceso `node` hijo siguió escuchando en el 4200. Se apagó de verdad en §15.12. La pestaña de Chrome sí se cerró. El stack de Docker (API + Postgres) sigue corriendo.
 - El ticket de prueba **SIS-0001** sigue en la base local: el modo automático bloqueó el `TRUNCATE`. Se puede borrar desde la app con el botón Eliminar.
 - **Pendiente de Raúl:** corregir `GRAPH_CLIENT_SECRET` (usar el *Value* del secreto) y correr `docker compose up -d`; probar el cooldown con una cuenta no-admin.
+
+### 15.12 Secreto de Graph renovado — correos funcionando
+
+**Causa del fallo de §15.9:** en el `.env` se había puesto el **"Id. de secreto"** (un GUID que solo identifica el secreto en Azure) en vez del **"Valor"**. El valor del secreto viejo ya aparecía oculto en el portal (Azure lo muestra solo una vez, al crearlo) y no estaba guardado en ningún gestor de secretos, así que Raúl **generó un secreto nuevo** en `tickets-sistemas-api` → Certificados y secretos.
+
+**Verificación, sin exponer el secreto:**
+
+1. En el `.env`, `GRAPH_CLIENT_SECRET` ya no tiene forma de GUID (se revisó solo el formato, no el valor).
+2. La API seguía corriendo con el secreto viejo: arrancó a las 13:30 y el `.env` se guardó a las 13:38. Se recreó con `docker compose up -d`.
+3. Desde un contenedor desechable (`curlimages/curl`, con `--env-file .env`) se pidió un token *client credentials* a Entra ID para `graph.microsoft.com`. Respuesta **HTTP 200**. Solo se imprimió el código, nunca el secreto ni el token, y no se envió ningún correo.
+4. **Prueba real:** se creó el ticket **SIS-0002** desde la app. Graph respondió **`202 Accepted`** a `POST /users/{remitente}/sendMail`, así que la notificación salió hacia los tres admins.
+
+> [!warning] Mantenimiento del secreto
+> - Borrar el secreto viejo en Azure, si no se hizo ya.
+> - Anotar la fecha de vencimiento del nuevo: al vencer, los correos dejan de salir sin ningún aviso en la app, solo el `fail` en el log.
+> - Guardarlo en un gestor de secretos (esta vez no había copia del anterior).
+
+**Cierre:** `ng serve` apagado de verdad (se terminó el proceso `node` que seguía escuchando en el 4200) y pestaña de Chrome cerrada. En la base local quedan los tickets de prueba **SIS-0001** y **SIS-0002**, que se pueden borrar desde la app.
+
+**Sigue pendiente:** probar el cooldown (429) con una cuenta no-admin.
