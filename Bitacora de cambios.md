@@ -410,7 +410,7 @@ Con eso, Hector pudo entrar. Ya estaba dado de alta como `Colaborador` admin act
 ### 11.5 Pendiente
 
 - ~~Notificar al colaborador asignado cuando se le asigna un ticket (evento "asignación", ya priorizado por Raúl para después de esta fase).~~ Hecho (§16).
-- Notificar al solicitante cuando cambia el estado del ticket — requiere agregar un campo de correo al alta (`TicketCreateDto.Solicitante` hoy es solo texto libre, sin correo).
+- ~~Notificar al solicitante cuando cambia el estado del ticket — requiere agregar un campo de correo al alta (`TicketCreateDto.Solicitante` hoy es solo texto libre, sin correo).~~ Hecho (§17).
 - Revisar si conviene mover el remitente de Graph de una cuenta de admin personal (`raul.galaviz@bisoft.com.mx`) a una cuenta de servicio dedicada (ej. `notificaciones@bisoft.com.mx`), evaluado y descartado por ahora para no complicar el alta.
 
 ---
@@ -705,6 +705,58 @@ Pendiente de §11.5, priorizado por Raúl como el siguiente paso de las notifica
 ### 16.3 Pendiente
 
 - Confirmar con Héctor que le llegó el correo y que se ve bien (no cayó en spam, acentos correctos).
-- Notificar al solicitante cuando cambia el estado del ticket (§11.5). Requiere agregar un campo de correo al alta.
+- ~~Notificar al solicitante cuando cambia el estado del ticket (§11.5). Requiere agregar un campo de correo al alta.~~ Hecho (§17).
 - Agregar un enlace al ticket en los correos cuando exista la URL definitiva.
+- Probar el cooldown (429) con una cuenta no-admin (§15.10).
+
+---
+
+## 17. Sesión del 28 de septiembre — aviso al solicitante cuando cambia el estado
+
+Último pendiente de notificaciones de §11.5. **Backend, commit `0f931aa`; frontend, commit `9d02035`.**
+
+### 17.1 Decisiones
+
+Raúl no contestó las dos preguntas de diseño, así que se tomaron las opciones recomendadas. Las dos se pueden cambiar sin rehacer nada:
+
+- **¿De dónde sale el correo?** Un campo nuevo, "Correo del solicitante", **prellenado con quien levanta el ticket** y editable. Si un admin levanta el ticket en nombre de otra persona, cambia el correo. Se descartaron dos alternativas:
+  - **Avisar siempre a quien creó el ticket:** con un ticket levantado en nombre de otra persona, el aviso le llegaría al admin.
+  - **Elegir al solicitante del directorio de colaboradores:** es más limpio, pero es el cambio más grande (backend, modal y tickets viejos).
+- **¿En qué estados se avisa?** En **cualquier** cambio de estado, incluido reabrir.
+
+### 17.2 Cambios
+
+**Backend:**
+- **`Ticket.SolicitanteEmail`** (`string?`, máx. 160, igual que `Colaborador.Email`). La migración `AgregarSolicitanteEmail` solo agrega una columna *nullable*. Los tickets anteriores quedan sin correo y simplemente no reciben aviso. Se generó con Docker (`sdk:8.0`, `dotnet-ef 8.0.8`, `MSYS_NO_PATHCONV=1`), como en §13.3.
+- **`TicketCreateDto.SolicitanteEmail`**, opcional, con `[EmailAddress]`. En `Create`:
+  - Si no viene, se usa el correo del colaborador logueado.
+  - Si no es `@bisoft.com.mx`, responde **400** y libera el turno del cooldown (§15.10). Así Graph nunca manda avisos a direcciones de fuera.
+- **`UpdateEstado`:** después de guardar, llama a `NotificarCambioEstadoAsync`, salvo en dos casos:
+  - el ticket no tiene correo o el estado no cambió;
+  - quien hace el cambio es el propio solicitante (por ejemplo, un admin que atiende su propio ticket).
+- **Correo:**
+  - Asunto: `[SIS-XXXX] Tu ticket pasó a <estado>: <título>`.
+  - Cuerpo: estado anterior → nuevo, quién lo atiende y quién hizo el cambio. Usa los mismos textos legibles de §16.
+- `TicketResponseDto` devuelve `SolicitanteEmail`.
+
+**Frontend:**
+- **`new-ticket-modal`:** nuevo campo `solicitanteEmail`, prellenado con `AuthService.currentUser().email`, obligatorio y validado con `^[^\s@]+@bisoft\.com\.mx$`. Tiene su propio mensaje de error.
+- **`ticket-detail`:** muestra el correo entre paréntesis junto al nombre del solicitante.
+
+### 17.3 Verificación
+
+- Compilan los dos. Al arrancar, la API aplicó la migración sola y quedó *healthy*.
+- **Prueba real (con aviso previo a Héctor):** para no crear tickets (eso avisaría a los tres admins), en la base local se puso a Héctor como solicitante de **SIS-0002**. Se pasó a *En progreso* y luego a *Resuelto*: Graph respondió **`202`** las dos veces.
+- **Caso sin correo:** en **SIS-0001** se puso a Raúl como solicitante y Raúl lo pasó de *Resuelto* a *Cerrado*. El cambio quedó en el historial y no hubo llamada a `sendMail`.
+- **Formulario (sin guardar):** el campo aparece prellenado con el correo de Raúl, y al poner una dirección `@gmail.com` muestra el error. Se canceló el modal y la base sigue con 2 tickets.
+
+**No probado:** que el backend rechace con 400 un correo externo mandado directo a la API, sin pasar por el formulario.
+
+**Cierre:** `ng serve` apagado y pestaña de Chrome cerrada.
+
+### 17.4 Pendiente
+
+- Confirmar con Héctor que le llegaron los dos correos de estado y el de asignación (§16) y que se ven bien.
+- Los tickets que se migren de Supabase quedarán sin `SolicitanteEmail`. Si se quiere avisar también en esos, hay que llenarlo a mano o desde el directorio.
+- Agregar un enlace al ticket en los correos cuando exista la URL definitiva (§16.3).
 - Probar el cooldown (429) con una cuenta no-admin (§15.10).
