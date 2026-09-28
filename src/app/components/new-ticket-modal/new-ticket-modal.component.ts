@@ -12,6 +12,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CATEGORIAS } from '../../models/ticket.model';
 import { extraerMensajeError } from '../../services/api.util';
+import { AuthService } from '../../services/auth.service';
 import { TicketsService } from '../../services/tickets.service';
 
 @Component({
@@ -24,6 +25,7 @@ import { TicketsService } from '../../services/tickets.service';
 export class NewTicketModalComponent implements AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
   private ticketsService = inject(TicketsService);
+  private authService = inject(AuthService);
 
   @ViewChild('primerCampo') private primerCampo?: ElementRef<HTMLInputElement>;
 
@@ -55,6 +57,12 @@ export class NewTicketModalComponent implements AfterViewInit, OnDestroy {
     descripcion: ['', [Validators.required, Validators.maxLength(4000)]],
     categoria: [this.categorias[0].value, Validators.required],
     solicitante: ['', [Validators.required, Validators.maxLength(80)]],
+    // Prellenado con quien levanta el ticket; si es en nombre de otra
+    // persona, se cambia. A este correo se avisan los cambios de estado.
+    solicitanteEmail: [
+      this.authService.currentUser()?.email ?? '',
+      [Validators.required, Validators.maxLength(160), Validators.pattern(/^[^\s@]+@bisoft\.com\.mx$/i)],
+    ],
   });
 
   async guardar(): Promise<void> {
@@ -73,6 +81,7 @@ export class NewTicketModalComponent implements AfterViewInit, OnDestroy {
         descripcion: valores.descripcion.trim(),
         categoria: valores.categoria,
         solicitante: valores.solicitante.trim(),
+        solicitanteEmail: valores.solicitanteEmail.trim(),
       });
       this.cerrar.emit();
     } catch (e) {

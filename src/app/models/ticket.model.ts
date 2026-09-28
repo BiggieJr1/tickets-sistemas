@@ -14,6 +14,7 @@ export interface Ticket {
   prioridad: PrioridadValue;
   estado: EstadoValue;
   solicitante: string;
+  solicitanteEmail: string | null;
   asignadoAId: number | null;
   asignadoANombre: string | null;
   actualizadoPorNombre: string | null;
@@ -26,6 +27,7 @@ export interface TicketCreateDto {
   descripcion: string;
   categoria: CategoriaValue;
   solicitante: string;
+  solicitanteEmail?: string;
 }
 
 export type TipoEventoValue = 'CambioEstado' | 'CambioPrioridad' | 'CambioAsignacion' | 'Comentario';

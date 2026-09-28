@@ -37,8 +37,21 @@
         <input id="f-solicitante" type="text" formControlName="solicitante" placeholder="Nombre de quien reporta" />
       </div>
 
+      <div class="field">
+        <label for="f-solicitante-email">Correo del solicitante</label>
+        <input
+          id="f-solicitante-email"
+          type="email"
+          formControlName="solicitanteEmail"
+          placeholder="nombre.apellido@bisoft.com.mx"
+        />
+      </div>
+      @if (form.controls.solicitanteEmail.invalid && form.controls.solicitanteEmail.touched) {
+        <div class="err" role="alert">El correo debe ser una cuenta @bisoft.com.mx. Ahí le avisaremos los cambios de estado.</div>
+      }
+
       @if (form.invalid && (form.touched || form.dirty)) {
-        <div class="err" role="alert">El título, la descripción y el solicitante son obligatorios.</div>
+        <div class="err" role="alert">El título, la descripción, el solicitante y su correo son obligatorios.</div>
       }
       @if (error()) {
         <div class="err" role="alert">{{ error() }}</div>
