@@ -28,7 +28,7 @@ El proyecto son **dos repos separados**:
 12. [[#12. Sesión del 14-18 de septiembre — asignación solo a admins e importar colaboradores desde Entra ID|Asignación solo a admins e import desde Entra ID]]
 13. [[#13. Sesión del 18 de septiembre — import real, pausa de despliegues por créditos, historial de tickets|Import real, pausa de Netlify e historial de tickets]]
 14. [[#14. Sesión del 21 de septiembre — commit de la campanita vieja, y plan de migración a servidor propio|Campanita y plan de migración a servidor propio]]
-15. [[#15. Sesión del 28 de septiembre — completar la dockerización del backend|Completar la dockerización del backend]]
+15. [[#15. Sesión del 28 de septiembre — completar la dockerización del backend|Dockerización del backend y baja de Railway/Netlify]]
 
 ---
 
@@ -567,3 +567,24 @@ El `Dockerfile` y el `docker-compose.yml` ya existían (§2 y §14.3), pero les 
 
 - Correr `docker compose build tickets-api` con Docker Desktop encendido para confirmar que la imagen compila.
 - Lo de §14.4 sigue igual (servidor, datos, certificado, DNS, Azure).
+
+### 15.4 Duda aclarada: el login ya es por OAuth
+
+En una demo, la pantalla de login seguía pidiendo contraseña y surgió la duda de si faltaba pasar a OAuth. Ya estaba hecho desde §9: el login es OAuth 2.0 / OpenID Connect con Entra ID (`msal.loginRedirect()` en `auth.service.ts`) y la app no tiene ningún campo de contraseña propio. La contraseña que se ve es la de la cuenta de Microsoft, en la página de Microsoft. Para no escribirla ni ahí se puede activar SSO en equipos unidos a Entra ID o métodos sin contraseña (Authenticator, Windows Hello, FIDO2); eso lo configura TI en el tenant, no requiere cambios en la app.
+
+### 15.5 Railway y Netlify dados de baja
+
+Raúl dio de baja ambos servicios. Consecuencias:
+
+- **La app queda fuera de línea** hasta que el servidor propio esté listo.
+- **El push del frontend ya no tiene riesgo**: sin Netlify no hay build automático que despliegue el `API_ROOT` relativo de §14.3. Se subieron a GitHub los commits del frontend que estaban solo en local desde §13.2.
+- **El secreto de Graph ya no se puede copiar de Railway**: sale del gestor de secretos o se genera uno nuevo en el App Registration `tickets-sistemas-api` (y se borra el anterior, que de paso queda rotado).
+- **Supabase sigue activo a propósito**: ahí están los datos reales hasta hacer el `pg_dump` (paso 2 de `MIGRAR-SERVIDOR-LOCAL.md`).
+
+**Backend (`D:\tickets-sistemas`):** `.env.example`, `docker-compose.yml` y `MIGRAR-SERVIDOR-LOCAL.md` ya no dicen que el secreto se copie de Railway. La guía ahora indica quitar `https://generador-tickets.netlify.app` de los redirect URIs del App Registration del frontend, porque si alguien registrara ese subdominio podría recibir los redirects de login. `DEPLOY-NUBE.md` quedó marcado como obsoleto.
+
+### 15.6 Pendiente
+
+- Quitar el redirect URI de Netlify en Azure (`tickets-sistemas-frontend` → Authentication).
+- Conseguir o regenerar el secreto de Graph para el `.env` del servidor.
+- Dar de baja Supabase **solo después** de restaurar el dump en el servidor propio.
