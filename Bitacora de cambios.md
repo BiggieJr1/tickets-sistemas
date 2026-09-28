@@ -704,7 +704,7 @@ Pendiente de §11.5, priorizado por Raúl como el siguiente paso de las notifica
 
 ### 16.3 Pendiente
 
-- Confirmar con Héctor que le llegó el correo y que se ve bien (no cayó en spam, acentos correctos).
+- ~~Confirmar con Héctor que le llegó el correo y que se ve bien (no cayó en spam, acentos correctos).~~ Confirmado (§18).
 - ~~Notificar al solicitante cuando cambia el estado del ticket (§11.5). Requiere agregar un campo de correo al alta.~~ Hecho (§17).
 - Agregar un enlace al ticket en los correos cuando exista la URL definitiva.
 - Probar el cooldown (429) con una cuenta no-admin (§15.10).
@@ -756,7 +756,48 @@ Raúl no contestó las dos preguntas de diseño, así que se tomaron las opcione
 
 ### 17.4 Pendiente
 
-- Confirmar con Héctor que le llegaron los dos correos de estado y el de asignación (§16) y que se ven bien.
-- Los tickets que se migren de Supabase quedarán sin `SolicitanteEmail`. Si se quiere avisar también en esos, hay que llenarlo a mano o desde el directorio.
+- ~~Confirmar con Héctor que le llegaron los dos correos de estado y el de asignación (§16) y que se ven bien.~~ Confirmado por Raúl (§18).
+- ~~Los tickets que se migren de Supabase quedarán sin `SolicitanteEmail`.~~ No aplica: casi no se usaron (§18).
 - Agregar un enlace al ticket en los correos cuando exista la URL definitiva (§16.3).
 - Probar el cooldown (429) con una cuenta no-admin (§15.10).
+
+---
+
+## 18. Sesión del 28 de septiembre — estilos migrados a Tailwind CSS
+
+**Confirmaciones de Raúl:** llegaron los tres correos a Héctor (asignación en §16 y los dos de estado en §17). Los tickets de Supabase casi no se usaron, así que no importa que queden sin `SolicitanteEmail`.
+
+**Pedido:** pasar los estilos a Tailwind, manteniendo el diseño parecido. **Frontend, commit `691f72d`.**
+
+### 18.1 Cambios
+
+Tailwind 4 (`tailwindcss` + `@tailwindcss/postcss` + `.postcssrc.json`) ya estaba instalado, pero el `@import` estaba comentado y no se usaba.
+
+- **`src/styles.scss` → `src/styles.css`** (y `angular.json`). Se hizo CSS porque el `@import 'tailwindcss'` de Tailwind 4 no convive bien con Sass.
+- **Tema:** la paleta de `tickets-theme.scss` (borrado) pasó a `@theme` con los mismos valores:
+  - Colores: `bg`, `panel`, `panel-2`, `line` (antes `--border`), `ink` (antes `--text`), `muted`, `accent`, `accent-ink` (`#08211d`, texto sobre el acento), `crit`, `alta`, `media`, `baja`.
+  - Fuentes: `font-sans` (Inter) y `font-mono` (JetBrains Mono).
+  - Las versiones `-dim` ya no son variables: se usan con opacidad (`bg-crit/14`, `bg-baja/16`).
+- **`@layer components`:** agrupa las piezas que se repetían en varias pantallas: `page`, `page-header`, `page-title`, `btn-primary`, `btn-save`, `btn-ghost`, `input`, `field-label`, `badge`, `overlay`, `modal`, `modal-title`, `modal-actions`, `banner-err`, `banner-ok`, `text-err`, `loading` y `spinner`. Lo que es de una sola pantalla va con utilidades en su HTML.
+- **Se borraron los 9 `.scss`/`.css` de componente** (~900 líneas) y sus `styleUrl`. Los estilos de `:host` pasaron a `host: { class: '...' }` en `ticket-list` y `colaborador-list` (`page`) y en `ticket-row` y `ticket-detail` (`block`).
+- **`ticket-row`:** las clases de prioridad se armaban concatenando (`'p-' + prioridad`). Tailwind no puede detectar clases armadas así, así que ahora salen de dos mapas con la clase completa (`BORDE_PRIORIDAD`, `BADGE_PRIORIDAD`).
+- **Base:** Tailwind pone `cursor: default` en los botones, así que se agregó `button:not(:disabled) { cursor: pointer }` para mantener el comportamiento anterior.
+
+**Diferencias visibles (a propósito o inevitables):**
+- En el modal de nuevo ticket, los campos ya no se salen del borde derecho. Antes faltaba `box-sizing: border-box`, y el preflight de Tailwind lo pone.
+- En la vista de un no-admin, "Estado" y "Prioridad" usan el mismo estilo que los demás metadatos (etiqueta gris, valor claro).
+
+### 18.2 Verificación
+
+- `ng build` compila. En el CSS generado se revisó que existan las clases dinámicas (`border-l-crit`, `bg-crit/14`, `bg-baja/16`) y las responsivas (`max-[520px]:hidden`).
+- **En Chrome, comparado contra capturas de antes:** lista, detalle con historial, modal de nuevo ticket (se canceló sin guardar), campanita y Colaboradores. Se ven igual, salvo las diferencias de arriba.
+- **No revisado:** la pantalla de login (habría que cerrar sesión) y la vista en celular (menos de 520 px).
+
+**Cierre:** `ng serve` apagado y pestaña de Chrome cerrada.
+
+### 18.3 Pendiente
+
+- Revisar el login y la vista en celular.
+- Agregar un enlace al ticket en los correos cuando exista la URL definitiva (§16.3).
+- Probar el cooldown (429) con una cuenta no-admin (§15.10).
+- Respaldos automáticos de la base antes de migrar al servidor.
