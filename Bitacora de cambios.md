@@ -800,4 +800,50 @@ Tailwind 4 (`tailwindcss` + `@tailwindcss/postcss` + `.postcssrc.json`) ya estab
 - Revisar el login y la vista en celular.
 - Agregar un enlace al ticket en los correos cuando exista la URL definitiva (§16.3).
 - Probar el cooldown (429) con una cuenta no-admin (§15.10).
-- Respaldos automáticos de la base antes de migrar al servidor.
+- Respaldos automáticos de la base antes de migrar al servidor. Plan en §19, en pausa hasta tener el pipeline.
+
+---
+
+## 19. Sesión del 28 de septiembre — plan de respaldos de la base (en pausa)
+
+**Estado:** solo planeado, sin código. Raúl lo pone en pausa hasta que se apruebe la licencia de Visual Studio y se arme el pipeline de despliegue; después el respaldo se incorpora como parte de ese pipeline.
+
+### 19.1 Situación actual
+
+**No hay ningún respaldo.** En el servidor propio la base vivirá en el volumen de Docker `tickets-db-data` (`docker-compose.yml`) y nada la copia a otro lado. Con Supabase no hacía falta porque Supabase respaldaba por su cuenta. En el servidor propio, eso queda a cargo nuestro.
+
+**Formas en que se perderían los datos:**
+- Falla el disco del servidor.
+- `docker compose down -v` borra el volumen sin preguntar.
+- "Eliminar ticket" no tiene papelera: un borrado por error solo se recupera con un respaldo.
+- Una migración o actualización que sale mal y deja la base dañada.
+- Ransomware o un problema en la red que afecte al servidor. Un respaldo en el mismo disco se pierde junto con todo.
+
+### 19.2 Propuesta
+
+1. **Respaldo automático diario.** Un servicio más en `docker-compose.yml`, con la misma imagen `postgres:16` para que `pg_dump` coincida con la versión de la base.
+   - A las 2:00 a.m. genera `pg_dump -Fc` en un archivo con la fecha (`tickets-AAAA-MM-DD.dump`).
+   - Retención de **7 diarios, 4 semanales y 6 mensuales**.
+   - No requiere instalar nada en el Ubuntu del servidor.
+   - La base es chica (MB), así que guardar todo eso ocupa muy poco.
+2. **Una copia fuera del servidor.** Es el punto más importante, porque una copia en el mismo disco no protege si falla ese disco. Opciones: una carpeta de red o NAS de la empresa, o una biblioteca de SharePoint/OneDrive.
+3. **Script de restauración y prueba periódica.** El script restaura el último respaldo en un Postgres desechable y cuenta tickets y colaboradores para confirmar que salió completo. Conviene correrlo una vez al mes: un respaldo que nunca se restauró no garantiza nada.
+4. **Aviso si falla.** Si no se generó el respaldo, se manda un correo a los admins por Graph, que ya funciona (§11, §16). Si no, el respaldo puede fallar durante semanas sin que nadie se entere, como pasó con el secreto de Graph (§15.12).
+5. **Documentación** en `MIGRAR-SERVIDOR-LOCAL.md`: cómo funciona, dónde quedan los archivos y cómo restaurar paso a paso.
+
+**Integración con el pipeline:** además del respaldo diario, sacar uno **antes de cada despliegue**, porque la API corre `Database.Migrate()` al arrancar y una migración mala se revierte restaurando ese respaldo.
+
+**Fuera del respaldo:** el `.env` tiene los secretos. Va en un gestor de secretos (§15.12), no junto con los respaldos.
+
+### 19.3 Decisiones pendientes
+
+- **Dónde va la copia externa** (punto 2). Probablemente hay que verlo con TI: ¿NAS o carpeta de red, o SharePoint/OneDrive?
+- **Retención:** confirmar 7 diarios, 4 semanales y 6 mensuales, o lo que pida la empresa.
+- **Frecuencia:** con uno diario, en el peor caso se pierde hasta un día de tickets. Con el volumen actual parece suficiente.
+
+### 19.4 Qué se puede hacer sin esperar
+
+Los puntos 1, 3 y 5 se pueden armar y probar en la máquina de desarrollo con el stack local, sin el servidor ni TI. La copia externa (2) y el aviso (4) se conectan cuando se decida dónde va la copia.
+
+> [!note] Limpieza menor
+> En `D:\tickets-sistemas` quedó una carpeta vacía llamada `TicketsSistemas.Api;C`, probablemente de una ruta mal convertida por Git Bash. Se puede borrar.
