@@ -1,23 +1,27 @@
-<div class="ticket" [class]="claseBordePrioridad()">
+<div class="overflow-hidden rounded-lg border border-l-4 border-line bg-panel" [class]="claseBordePrioridad()">
   <button
     type="button"
-    class="ticket-row"
+    class="flex w-full items-center gap-3 px-3.5 py-3 text-left hover:bg-panel-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
     [attr.aria-expanded]="expandido()"
     [attr.aria-controls]="detalleId"
     (click)="toggle.emit()"
   >
-    <span class="t-id">{{ ticket().codigoTicket }}</span>
-    <span class="t-title">{{ ticket().titulo }}</span>
-    <span class="badge cat">{{ categoriaCodigo[ticket().categoria] }}</span>
+    <span class="min-w-[78px] font-mono text-xs text-muted">{{ ticket().codigoTicket }}</span>
+    <span class="min-w-30 flex-1 text-sm font-medium">{{ ticket().titulo }}</span>
+    <span class="badge border border-line bg-panel-2 text-muted max-[520px]:hidden">
+      {{ categoriaCodigo[ticket().categoria] }}
+    </span>
     <span class="badge" [class]="claseBadgePrioridad()">
       {{ labelDe(prioridades, ticket().prioridad) }}
     </span>
-    <span class="badge estado">{{ labelDe(estados, ticket().estado) }}</span>
-    <span class="t-date">{{ ticket().creado | date: 'dd MMM' }}</span>
+    <span class="badge border border-line bg-panel-2 text-ink">{{ labelDe(estados, ticket().estado) }}</span>
+    <span class="min-w-[70px] text-right font-mono text-[11px] text-muted max-[520px]:hidden">
+      {{ ticket().creado | date: 'dd MMM' }}
+    </span>
   </button>
 
   @if (expandido()) {
-    <div class="ticket-detail open" [id]="detalleId" (click)="$event.stopPropagation()">
+    <div class="border-t border-line px-3.5 pb-4" [id]="detalleId" (click)="$event.stopPropagation()">
       <app-ticket-detail
         [ticket]="ticket()"
         [colaboradores]="colaboradores()"

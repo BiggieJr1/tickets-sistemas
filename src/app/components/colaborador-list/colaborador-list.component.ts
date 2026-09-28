@@ -9,7 +9,7 @@ import { ColaboradoresService } from '../../services/colaboradores.service';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './colaborador-list.component.html',
-  styleUrl: './colaborador-list.component.scss',
+  host: { class: 'page' },
 })
 export class ColaboradorListComponent implements OnInit {
   protected colaboradoresService = inject(ColaboradoresService);

@@ -6,7 +6,6 @@ import { TicketsService } from '../../services/tickets.service';
   selector: 'app-notificaciones-admin',
   standalone: true,
   templateUrl: './notificaciones-admin.component.html',
-  styleUrl: './notificaciones-admin.component.scss',
 })
 export class NotificacionesAdminComponent {
   protected ticketsService = inject(TicketsService);

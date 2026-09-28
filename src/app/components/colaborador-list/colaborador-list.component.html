@@ -1,81 +1,95 @@
-<div class="app">
-  <div class="header">
-    <h1>&gt; Colaboradores</h1>
-    <button class="btn-new" [disabled]="importando()" (click)="importarDesdeEntra()">
-      {{ importando() ? 'Importando...' : 'Importar desde Microsoft 365' }}
-    </button>
-    <button class="btn-new" (click)="modalAbierto.set(true)">+ Nuevo colaborador</button>
-  </div>
-
-  @if (error()) {
-    <div class="err-banner" role="alert">{{ error() }}</div>
-  }
-  @if (colaboradoresService.error()) {
-    <div class="err-banner" role="alert">{{ colaboradoresService.error() }}</div>
-  }
-  @if (mensajeImportacion()) {
-    <div class="ok-banner" role="status">{{ mensajeImportacion() }}</div>
-  }
-
-  @if (colaboradoresService.loading() && colaboradoresService.colaboradores().length === 0) {
-    <div class="loading"><span class="spinner"></span> Cargando colaboradores...</div>
-  } @else {
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Correo</th>
-          <th>Administrador</th>
-          <th>Activo</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (c of colaboradoresService.colaboradores(); track c.id) {
-          <tr [class.inactivo]="!c.activo">
-            <td>{{ c.nombreCompleto }}</td>
-            <td>{{ c.email }}</td>
-            <td>
-              <input type="checkbox" [checked]="c.esAdministrador" (change)="toggleAdmin(c)" />
-            </td>
-            <td>
-              <input type="checkbox" [checked]="c.activo" (change)="toggleActivo(c)" />
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  }
+<div class="page-header items-center">
+  <h1 class="page-title">&gt; Colaboradores</h1>
+  <button class="btn-primary" [disabled]="importando()" (click)="importarDesdeEntra()">
+    {{ importando() ? 'Importando...' : 'Importar desde Microsoft 365' }}
+  </button>
+  <button class="btn-primary" (click)="modalAbierto.set(true)">+ Nuevo colaborador</button>
 </div>
+
+@if (error()) {
+  <div class="banner-err" role="alert">{{ error() }}</div>
+}
+@if (colaboradoresService.error()) {
+  <div class="banner-err" role="alert">{{ colaboradoresService.error() }}</div>
+}
+@if (mensajeImportacion()) {
+  <div class="banner-ok" role="status">{{ mensajeImportacion() }}</div>
+}
+
+@if (colaboradoresService.loading() && colaboradoresService.colaboradores().length === 0) {
+  <div class="loading"><span class="spinner"></span> Cargando colaboradores...</div>
+} @else {
+  <table
+    class="w-full border-collapse text-[13px] [&_td]:border-b [&_td]:border-line [&_td]:p-2.5 [&_th]:border-b [&_th]:border-line [&_th]:px-2.5 [&_th]:py-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_th]:text-muted"
+  >
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Administrador</th>
+        <th>Activo</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of colaboradoresService.colaboradores(); track c.id) {
+        <tr [class.text-muted]="!c.activo">
+          <td>{{ c.nombreCompleto }}</td>
+          <td>{{ c.email }}</td>
+          <td>
+            <input
+              type="checkbox"
+              class="size-4 cursor-pointer accent-accent"
+              [checked]="c.esAdministrador"
+              (change)="toggleAdmin(c)"
+            />
+          </td>
+          <td>
+            <input
+              type="checkbox"
+              class="size-4 cursor-pointer accent-accent"
+              [checked]="c.activo"
+              (change)="toggleActivo(c)"
+            />
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
 
 @if (modalAbierto()) {
   <div class="overlay" (click)="modalAbierto.set(false)">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" (click)="$event.stopPropagation()">
-      <h2 id="modal-titulo">&gt; Nuevo colaborador</h2>
+    <div
+      class="modal max-w-[420px]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-titulo"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="modal-titulo" class="modal-title">&gt; Nuevo colaborador</h2>
 
-      <form [formGroup]="form" (ngSubmit)="crear()">
-        <div class="field">
-          <label for="f-nombre">Nombre completo</label>
-          <input id="f-nombre" type="text" formControlName="nombreCompleto" />
+      <form [formGroup]="form" (ngSubmit)="crear()" class="flex flex-col gap-3.5">
+        <div>
+          <label for="f-nombre" class="field-label">Nombre completo</label>
+          <input id="f-nombre" type="text" class="input" formControlName="nombreCompleto" />
         </div>
 
-        <div class="field">
-          <label for="f-email">Correo</label>
-          <input id="f-email" type="email" formControlName="email" />
+        <div>
+          <label for="f-email" class="field-label">Correo</label>
+          <input id="f-email" type="email" class="input" formControlName="email" />
         </div>
 
-        <div class="field field-checkbox">
-          <label>
-            <input type="checkbox" formControlName="esAdministrador" />
-            Es administrador
-          </label>
-        </div>
+        <label class="flex items-center gap-2 text-[13px] text-ink">
+          <input type="checkbox" class="accent-accent" formControlName="esAdministrador" />
+          Es administrador
+        </label>
 
         @if (form.invalid && (form.touched || form.dirty)) {
-          <div class="err" role="alert">Nombre y correo son obligatorios.</div>
+          <div class="text-err" role="alert">Nombre y correo son obligatorios.</div>
         }
 
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" (click)="modalAbierto.set(false)">Cancelar</button>
+        <div class="modal-actions mt-1">
+          <button type="button" class="btn-ghost" (click)="modalAbierto.set(false)">Cancelar</button>
           <button type="submit" class="btn-save" [disabled]="guardando()">
             {{ guardando() ? 'Guardando...' : 'Guardar colaborador' }}
           </button>

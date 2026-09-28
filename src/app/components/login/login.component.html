@@ -1,14 +1,14 @@
-<div class="login-page">
-  <div class="card">
-    <h1>&gt; Centro de Tickets — Sistemas</h1>
+<div class="flex min-h-screen items-center justify-center p-5">
+  <div class="w-full max-w-[380px] rounded-[10px] border border-line bg-panel p-6">
+    <h1 class="mb-5 font-mono text-[15px] font-bold">&gt; Centro de Tickets — Sistemas</h1>
 
     @if (auth.error()) {
-      <div class="err" role="alert">{{ auth.error() }}</div>
-      <button type="button" class="btn-login" (click)="cerrarSesion()">
+      <div class="text-err -mt-1.5 mb-3" role="alert">{{ auth.error() }}</div>
+      <button type="button" class="btn-save mt-1 w-full py-2.5" (click)="cerrarSesion()">
         Cerrar sesión e intentar con otra cuenta
       </button>
     } @else {
-      <button type="button" class="btn-login" [disabled]="auth.loading()" (click)="entrar()">
+      <button type="button" class="btn-save mt-1 w-full py-2.5" [disabled]="auth.loading()" (click)="entrar()">
         {{ auth.loading() ? 'Entrando...' : 'Iniciar sesión con Microsoft' }}
       </button>
     }

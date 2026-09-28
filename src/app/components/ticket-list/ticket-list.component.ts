@@ -15,7 +15,7 @@ import { NewTicketModalComponent } from '../new-ticket-modal/new-ticket-modal.co
   standalone: true,
   imports: [TicketFilterBarComponent, TicketRowComponent, NewTicketModalComponent],
   templateUrl: './ticket-list.component.html',
-  styleUrl: './ticket-list.component.scss',
+  host: { class: 'page' },
 })
 export class TicketListComponent implements OnInit {
   protected ticketsService = inject(TicketsService);

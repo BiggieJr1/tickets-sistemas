@@ -10,7 +10,6 @@ const INTERVALO_POLLING_MS = 30_000;
 @Component({
   imports: [RouterOutlet, RouterLink, NotificacionesAdminComponent],
   selector: 'app-root',
-  styleUrl: './app.css',
   templateUrl: './app.html',
 })
 export class App implements OnInit {

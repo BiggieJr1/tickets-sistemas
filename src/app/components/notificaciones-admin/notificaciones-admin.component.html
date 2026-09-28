@@ -1,31 +1,43 @@
-<div class="notificaciones">
+<div class="relative">
   <button
     type="button"
-    class="btn-campana"
-    [class.tiene-nuevos]="ticketsService.nuevos().length > 0"
+    class="relative rounded-md border bg-transparent px-2.5 py-1.5 text-sm leading-none"
+    [class]="ticketsService.nuevos().length > 0 ? 'border-accent text-accent' : 'border-line text-muted'"
     (click)="toggle()"
   >
     🔔
     @if (ticketsService.nuevos().length > 0) {
-      <span class="badge">{{ ticketsService.nuevos().length }}</span>
+      <span
+        class="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-lg bg-crit px-1 text-[10px] font-bold text-white"
+      >
+        {{ ticketsService.nuevos().length }}
+      </span>
     }
   </button>
 
   @if (abierto()) {
-    <div class="dropdown">
+    <div
+      class="absolute top-[calc(100%+8px)] right-0 z-20 max-h-80 w-[300px] overflow-y-auto rounded-lg border border-line bg-panel-2 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+    >
       @if (ticketsService.nuevos().length === 0) {
-        <p class="vacio">No hay tickets nuevos.</p>
+        <p class="my-1 text-center text-xs text-muted">No hay tickets nuevos.</p>
       } @else {
-        <ul>
+        <ul class="flex flex-col gap-2">
           @for (t of ticketsService.nuevos(); track t.id) {
-            <li>
-              <span class="codigo">{{ t.codigoTicket }}</span>
-              <span class="titulo">{{ t.titulo }}</span>
-              <span class="solicitante">De: {{ t.solicitante }}</span>
+            <li class="flex flex-col gap-0.5 border-b border-line pb-2 text-xs last:border-b-0 last:pb-0">
+              <span class="font-mono text-[11px] text-accent">{{ t.codigoTicket }}</span>
+              <span class="font-semibold text-ink">{{ t.titulo }}</span>
+              <span class="text-[11px] text-muted">De: {{ t.solicitante }}</span>
             </li>
           }
         </ul>
-        <button type="button" class="btn-marcar" (click)="irATickets()">Ver tickets</button>
+        <button
+          type="button"
+          class="mt-2.5 w-full rounded-md border border-accent bg-accent/14 py-1.5 text-xs text-accent hover:bg-accent hover:text-bg"
+          (click)="irATickets()"
+        >
+          Ver tickets
+        </button>
       }
     </div>
   }

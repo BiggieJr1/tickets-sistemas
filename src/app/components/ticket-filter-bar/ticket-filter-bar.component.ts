@@ -7,7 +7,6 @@ import { CATEGORIAS, ESTADOS, PRIORIDADES } from '../../models/ticket.model';
   standalone: true,
   imports: [FormsModule],
   templateUrl: './ticket-filter-bar.component.html',
-  styleUrl: './ticket-filter-bar.component.scss',
 })
 export class TicketFilterBarComponent {
   // model() crea un signal con binding bidireccional: el padre lo usa como

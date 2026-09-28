@@ -1,26 +1,39 @@
-<div class="filters">
+<div class="mb-4.5 flex flex-wrap gap-2.5">
   <input
     type="text"
+    class="min-w-40 flex-1 rounded-md border border-line bg-panel px-2.5 py-2 text-[13px] text-ink outline-none focus:border-accent"
     aria-label="Buscar por título"
     placeholder="Buscar por título..."
     [(ngModel)]="busqueda"
   />
 
-  <select aria-label="Filtrar por categoría" [(ngModel)]="categoria">
+  <select
+    class="rounded-md border border-line bg-panel px-2.5 py-2 text-[13px] text-ink outline-none focus:border-accent"
+    aria-label="Filtrar por categoría"
+    [(ngModel)]="categoria"
+  >
     <option value="">Categoría: todas</option>
     @for (c of categorias; track c.value) {
       <option [value]="c.value">{{ c.label }}</option>
     }
   </select>
 
-  <select aria-label="Filtrar por prioridad" [(ngModel)]="prioridad">
+  <select
+    class="rounded-md border border-line bg-panel px-2.5 py-2 text-[13px] text-ink outline-none focus:border-accent"
+    aria-label="Filtrar por prioridad"
+    [(ngModel)]="prioridad"
+  >
     <option value="">Prioridad: todas</option>
     @for (p of prioridades; track p.value) {
       <option [value]="p.value">{{ p.label }}</option>
     }
   </select>
 
-  <select aria-label="Filtrar por estado" [(ngModel)]="estado">
+  <select
+    class="rounded-md border border-line bg-panel px-2.5 py-2 text-[13px] text-ink outline-none focus:border-accent"
+    aria-label="Filtrar por estado"
+    [(ngModel)]="estado"
+  >
     <option value="">Estado: todos</option>
     @for (e of estados; track e.value) {
       <option [value]="e.value">{{ e.label }}</option>
@@ -28,6 +41,12 @@
   </select>
 
   @if (hayFiltrosActivos()) {
-    <button type="button" class="btn-clear" (click)="limpiar()">Limpiar filtros</button>
+    <button
+      type="button"
+      class="rounded-md border border-line bg-transparent px-3 py-2 text-[13px] text-muted transition-colors duration-[120ms] hover:border-muted hover:text-ink"
+      (click)="limpiar()"
+    >
+      Limpiar filtros
+    </button>
   }
 </div>

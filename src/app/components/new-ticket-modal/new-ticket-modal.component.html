@@ -1,64 +1,81 @@
-<div class="overlay open" (click)="cerrar.emit()">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" (click)="$event.stopPropagation()">
-    <h2 id="modal-titulo">&gt; Nuevo ticket</h2>
+<div class="overlay" (click)="cerrar.emit()">
+  <div
+    class="modal max-w-[460px]"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-titulo"
+    (click)="$event.stopPropagation()"
+  >
+    <h2 id="modal-titulo" class="modal-title">&gt; Nuevo ticket</h2>
 
-    <form [formGroup]="form" (ngSubmit)="guardar()">
-      <div class="field">
-        <label for="f-titulo">Título</label>
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="flex flex-col gap-3.5">
+      <div>
+        <label for="f-titulo" class="field-label">Título</label>
         <input
           #primerCampo
           id="f-titulo"
           type="text"
+          class="input"
           formControlName="titulo"
           placeholder="Ej. Impresora del piso 2 sin conexión de red"
         />
       </div>
 
-      <div class="field">
-        <label for="f-descripcion">Descripción del problema</label>
+      <div>
+        <label for="f-descripcion" class="field-label">Descripción del problema</label>
         <textarea
           id="f-descripcion"
+          class="input min-h-20 resize-y"
           formControlName="descripcion"
           placeholder="Detalla el problema: qué pasó, cuándo, qué mensaje de error, a quién afecta..."
         ></textarea>
       </div>
 
-      <div class="field">
-        <label for="f-categoria">Categoría</label>
-        <select id="f-categoria" formControlName="categoria">
+      <div>
+        <label for="f-categoria" class="field-label">Categoría</label>
+        <select id="f-categoria" class="input" formControlName="categoria">
           @for (c of categorias; track c.value) {
             <option [value]="c.value">{{ c.label }}</option>
           }
         </select>
       </div>
 
-      <div class="field">
-        <label for="f-solicitante">Solicitante</label>
-        <input id="f-solicitante" type="text" formControlName="solicitante" placeholder="Nombre de quien reporta" />
+      <div>
+        <label for="f-solicitante" class="field-label">Solicitante</label>
+        <input
+          id="f-solicitante"
+          type="text"
+          class="input"
+          formControlName="solicitante"
+          placeholder="Nombre de quien reporta"
+        />
       </div>
 
-      <div class="field">
-        <label for="f-solicitante-email">Correo del solicitante</label>
+      <div>
+        <label for="f-solicitante-email" class="field-label">Correo del solicitante</label>
         <input
           id="f-solicitante-email"
           type="email"
+          class="input"
           formControlName="solicitanteEmail"
           placeholder="nombre.apellido@bisoft.com.mx"
         />
+        @if (form.controls.solicitanteEmail.invalid && form.controls.solicitanteEmail.touched) {
+          <div class="text-err mt-2" role="alert">
+            El correo debe ser una cuenta @bisoft.com.mx. Ahí le avisaremos los cambios de estado.
+          </div>
+        }
       </div>
-      @if (form.controls.solicitanteEmail.invalid && form.controls.solicitanteEmail.touched) {
-        <div class="err" role="alert">El correo debe ser una cuenta @bisoft.com.mx. Ahí le avisaremos los cambios de estado.</div>
-      }
 
       @if (form.invalid && (form.touched || form.dirty)) {
-        <div class="err" role="alert">El título, la descripción, el solicitante y su correo son obligatorios.</div>
+        <div class="text-err" role="alert">El título, la descripción, el solicitante y su correo son obligatorios.</div>
       }
       @if (error()) {
-        <div class="err" role="alert">{{ error() }}</div>
+        <div class="text-err" role="alert">{{ error() }}</div>
       }
 
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" (click)="cerrar.emit()">Cancelar</button>
+      <div class="modal-actions mt-1">
+        <button type="button" class="btn-ghost" (click)="cerrar.emit()">Cancelar</button>
         <button type="submit" class="btn-save" [disabled]="guardando()">
           {{ guardando() ? 'Guardando...' : 'Guardar ticket' }}
         </button>

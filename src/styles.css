@@ -1,0 +1,109 @@
+@import 'tailwindcss';
+
+/* Misma paleta que tenía tickets-theme.scss, ahora como tema de Tailwind:
+   cada color genera sus utilidades (bg-panel, text-muted, border-line...).
+   Las versiones tenues (-dim) se sacan con opacidad: bg-crit/14. */
+@theme {
+  --color-bg: #10141a;
+  --color-panel: #171e27;
+  --color-panel-2: #1e2731;
+  --color-line: #2a3441;
+  --color-ink: #e7ebf0;
+  --color-muted: #8996a8;
+  --color-accent: #2dd4bf;
+  --color-accent-ink: #08211d;
+  --color-crit: #f5484d;
+  --color-alta: #f5a524;
+  --color-media: #3b82f6;
+  --color-baja: #64748b;
+
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+@layer base {
+  body {
+    @apply min-h-screen bg-bg font-sans text-ink;
+  }
+
+  /* Tailwind deja los botones con cursor normal; aquí todos eran "pointer". */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Piezas que se repiten en varias pantallas. Lo que es de una sola pantalla
+   va con utilidades directo en su HTML. */
+@layer components {
+  .page {
+    @apply mx-auto block max-w-[980px] px-5 pt-7 pb-15;
+  }
+
+  .page-header {
+    @apply mb-5 flex flex-wrap justify-between gap-3.5 border-b border-line pb-4.5;
+  }
+
+  .page-title {
+    @apply font-mono text-xl font-bold tracking-[0.02em];
+  }
+
+  .btn-primary {
+    @apply rounded-md bg-accent px-4 py-2.5 font-mono text-[13px] font-bold text-accent-ink transition duration-[120ms] hover:-translate-y-px hover:shadow-[0_4px_14px_rgba(45,212,191,0.25)] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none;
+  }
+
+  .btn-save {
+    @apply rounded-md bg-accent px-4 py-[9px] text-[13px] font-bold text-accent-ink disabled:opacity-60;
+  }
+
+  .btn-ghost {
+    @apply rounded-md border border-line bg-transparent px-3.5 py-[9px] text-[13px] text-muted;
+  }
+
+  .input {
+    @apply w-full rounded-md border border-line bg-panel-2 px-2.5 py-[9px] text-[13px] text-ink outline-none focus:border-accent;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-xs text-muted;
+  }
+
+  .badge {
+    @apply rounded px-2 py-[3px] font-mono text-[11px] font-semibold tracking-[0.02em] whitespace-nowrap;
+  }
+
+  .overlay {
+    @apply fixed inset-0 z-10 flex items-center justify-center bg-[rgba(8,10,14,0.7)] p-5;
+  }
+
+  .modal {
+    @apply w-full rounded-[10px] border border-line bg-panel p-[22px] text-ink;
+  }
+
+  .modal-title {
+    @apply mb-4 font-mono text-base font-bold;
+  }
+
+  .modal-actions {
+    @apply mt-4.5 flex justify-end gap-2.5;
+  }
+
+  .banner-err {
+    @apply mb-4 rounded-lg border border-crit bg-crit/14 px-3.5 py-3 text-[13px] text-crit;
+  }
+
+  .banner-ok {
+    @apply mb-4 rounded-lg border border-accent bg-accent/14 px-3.5 py-3 text-[13px] text-accent;
+  }
+
+  .text-err {
+    @apply text-xs text-crit;
+  }
+
+  .loading {
+    @apply flex items-center justify-center gap-2.5 p-10 font-mono text-[13px] text-muted;
+  }
+
+  .spinner {
+    @apply size-3.5 animate-spin rounded-full [animation-duration:700ms] border-2 border-line border-t-accent;
+  }
+}

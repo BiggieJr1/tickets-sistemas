@@ -21,7 +21,7 @@ import { TicketsService } from '../../services/tickets.service';
   standalone: true,
   imports: [FormsModule, DatePipe],
   templateUrl: './ticket-detail.component.html',
-  styleUrl: './ticket-detail.component.scss',
+  host: { class: 'block' },
 })
 export class TicketDetailComponent {
   private auth = inject(AuthService);

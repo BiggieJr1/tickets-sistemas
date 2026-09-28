@@ -20,7 +20,6 @@ import { TicketsService } from '../../services/tickets.service';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './new-ticket-modal.component.html',
-  styleUrl: './new-ticket-modal.component.scss',
 })
 export class NewTicketModalComponent implements AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);

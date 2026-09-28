@@ -1,13 +1,19 @@
 @if (auth.currentUser(); as usuario) {
-  <div class="topbar">
-    <a routerLink="/tickets" class="brand">&gt; Centro de Tickets</a>
-    <span class="spacer"></span>
+  <div class="flex items-center gap-4 border-b border-line bg-panel px-5 py-2.5 text-[13px]">
+    <a routerLink="/tickets" class="font-mono font-bold text-ink">&gt; Centro de Tickets</a>
+    <span class="flex-1"></span>
     @if (auth.isAdmin()) {
-      <a routerLink="/colaboradores">Colaboradores</a>
+      <a routerLink="/colaboradores" class="text-muted hover:text-accent">Colaboradores</a>
       <app-notificaciones-admin />
     }
-    <span class="usuario">{{ usuario.nombreCompleto }}</span>
-    <button type="button" class="btn-salir" (click)="salir()">Salir</button>
+    <span class="text-muted">{{ usuario.nombreCompleto }}</span>
+    <button
+      type="button"
+      class="rounded-md border border-line bg-transparent px-3 py-1.5 text-xs text-muted hover:border-crit hover:text-crit"
+      (click)="salir()"
+    >
+      Salir
+    </button>
   </div>
 }
 

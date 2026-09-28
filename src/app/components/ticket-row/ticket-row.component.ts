@@ -17,7 +17,7 @@ import { TicketDetailComponent } from '../ticket-detail/ticket-detail.component'
   standalone: true,
   imports: [DatePipe, TicketDetailComponent],
   templateUrl: './ticket-row.component.html',
-  styleUrl: './ticket-row.component.scss',
+  host: { class: 'block' },
 })
 export class TicketRowComponent {
   readonly ticket = input.required<Ticket>();
@@ -40,10 +40,28 @@ export class TicketRowComponent {
   readonly estados = ESTADOS;
 
   claseBordePrioridad(): string {
-    return 'p-' + this.ticket().prioridad.toLowerCase();
+    return BORDE_PRIORIDAD[this.ticket().prioridad];
   }
 
   claseBadgePrioridad(): string {
-    return 'prio-' + this.ticket().prioridad.toLowerCase();
+    return BADGE_PRIORIDAD[this.ticket().prioridad];
   }
 }
+
+// Clases completas (no armadas con concatenación) para que Tailwind las
+// encuentre al escanear el código y genere su CSS.
+const BORDE_PRIORIDAD: Record<PrioridadValue, string> = {
+  Critica: 'border-l-crit',
+  Alta: 'border-l-alta',
+  Media: 'border-l-media',
+  Baja: 'border-l-baja',
+  SinAsignar: 'border-l-accent',
+};
+
+const BADGE_PRIORIDAD: Record<PrioridadValue, string> = {
+  Critica: 'bg-crit/14 text-crit',
+  Alta: 'bg-alta/14 text-alta',
+  Media: 'bg-media/14 text-media',
+  Baja: 'bg-baja/16 text-baja',
+  SinAsignar: 'bg-accent/14 text-accent',
+};
